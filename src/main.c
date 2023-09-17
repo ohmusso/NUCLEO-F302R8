@@ -19,6 +19,7 @@ int main()
       Port_Write(Port_On);
     }
     else{
+      Port_Write(Port_Off);
       systickCount = 0;
     }
   }
