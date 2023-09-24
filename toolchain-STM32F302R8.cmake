@@ -39,8 +39,7 @@ set(LINKER_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32f3.ld)
 #### -Wl,--gc-sections
 set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -nostdlib -T\"${LINKER_FILE}\" -Wl,-Map=out.map -Wl,--gc-sections")
 ## linker Executable
-#set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINKER} <LINK_FLAGS> <OBJECTS> <LINK_LIBRARIES> -out:<TARGET>")
-set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINKER} <LINK_FLAGS> <LINK_LIBRARIES> -o <TARGET>.elf <OBJECTS>")
+set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINKER} <LINK_FLAGS>  -o <TARGET>.elf <OBJECTS> <LINK_LIBRARIES>")
 
 # path
 set(CMAKE_SYSROOT ${ARM_GCC_SYSROOT})

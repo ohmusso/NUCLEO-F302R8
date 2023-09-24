@@ -1,5 +1,5 @@
-#include "./Driver/Clock/Clock.h"
-#include "./Driver/Port/Port.h"
+#include "./driver/clock/clock.h"
+#include "./driver/port/port.h"
 
 uint32 systickCount;
 

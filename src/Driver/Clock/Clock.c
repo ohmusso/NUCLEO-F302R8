@@ -1,4 +1,4 @@
-#include "Clock.h"
+#include "clock.h"
 
 #define System_Clock_Hz         ((uint32)8000000)           /*  8MHz    */
 
