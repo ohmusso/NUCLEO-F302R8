@@ -76,8 +76,5 @@ void Usart2_Transmit(
     uint8 value
 )
 {
-    uint8 i;
-    for( i = 0; i < 8; i++ ){
-        stpUSART2->TDR = value;
-    } 
+    stpUSART2->TDR = value;
 }
