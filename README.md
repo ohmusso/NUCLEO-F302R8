@@ -71,7 +71,13 @@ sample.bin will be created at build directory.
 
 LD2 will be blinking.
 
-### If use vscode
+### copu binary to usb drive
+
+``` powershell
+Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
+```
+
+## If use vscode
 
 Add include path for lint tool.
 

@@ -16,7 +16,7 @@ typedef struct
     uint32 notUsedAPB1RSTR;
     uint32 AHBENR;
     uint32 notUsedAPB2ENR;
-    uint32 notUsedAPB1ENR;
+    uint32 APB1ENR;
     uint32 notUsedBDCR;
     uint32 notUsedCSR;
     uint32 notUsedAHBRSTR;
@@ -25,12 +25,21 @@ typedef struct
 } StRCC;
 
 /* AHBENR */
-#define RCC_AHBENR_Type_Disabled 0x00
-#define RCC_AHBENR_Type_Enabled 0x01
+#define RCC_AHBENR_Disabled 0x00
+#define RCC_AHBENR_Enabled 0x01
 
-#define RCC_AHBENR_OPBRST_IOPBEN (RCC_AHBENR_Type_Enabled << 18)
-#define Init_RCC_AHBENR (RCC_AHBENR_OPBRST_IOPBEN)
+#define RCC_AHAENR_IOPAEN (RCC_AHBENR_Enabled << 17)
+#define RCC_AHBENR_IOPBEN (RCC_AHBENR_Enabled << 18)
+#define Init_RCC_AHBENR (RCC_AHBENR_IOPBEN | RCC_AHAENR_IOPAEN)
 
+/* APB1ENR */
+#define RCC_APB1ENR_Disabled 0x00
+#define RCC_APB1ENR_Enabled 0x01
+
+#define RCC_APB1ENR_USERT2 (RCC_APB1ENR_Enabled << 17)
+#define Init_RCC_APB1ENR (RCC_APB1ENR_USERT2)
+
+/* pointer to RCC register */
 #define stpRCC ((StRCC*)(RCC_BASE_ADDRESS))
 
 /* SYST Register Map */
@@ -69,6 +78,7 @@ typedef struct
 void Clock_Init()
 {
     stpRCC->AHBENR = Init_RCC_AHBENR;
+    stpRCC->APB1ENR = Init_RCC_APB1ENR;
     stpSYST->CSR = Init_SYST_CSR;
     stpSYST->RVR = Init_SYST_RVR;
     stpSYST->CVR = Init_SYST_CVR;
