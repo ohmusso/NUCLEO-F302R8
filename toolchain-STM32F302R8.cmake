@@ -36,8 +36,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall")
 ## linker script file
 set(LINKER_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32f3.ld)
 ### linker flags
-#### -Wl,--gc-sections
-set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -nostdlib -T\"${LINKER_FILE}\" -Wl,-Map=out.map -Wl,--gc-sections")
+#### if use standard library
+##### -nostdlib
+##### -Wl,--gc-sections
+set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T\"${LINKER_FILE}\" -Wl,-Map=out.map -Wl,--gc-sections")
 ## linker Executable
 set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINKER} <LINK_FLAGS>  -o <TARGET>.elf <OBJECTS> <LINK_LIBRARIES>")
 

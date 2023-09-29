@@ -69,11 +69,11 @@ g_pfnVectors:
 	.word	0
 	.word	0
 	.word	0
-	.word	0 /* SVC_Handler */
+	.word	SVC_Handler /* Used by FreeRTOS */
 	.word	0 /* DebugMon_Handler */
 	.word	0
-	.word	0 /* PendSV_Handler */
-	.word	SysTick_Handler
+	.word	PendSV_Handler /* Used by FreeRTOS */
+	.word	SysTick_Handler /* Used by FreeRTOS */
 	.word	0
 	.word	0
 	.word	0
