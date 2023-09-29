@@ -4,7 +4,5 @@
 #include "Platform_Types.h"
 
 extern void Uart_Init();
-extern void Usart2_Transmit(
-    uint8 value
-);
+extern void Usart2_Transmit(uint8 value);
 #endif /* DRIVER_UART_H*/

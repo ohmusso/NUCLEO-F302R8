@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        ".clang-format": "yaml"
+    },
+    "editor.formatOnType": true,
+    "editor.formatOnSave": true,
+    "C_Cpp.clang_format_style": ""
+}

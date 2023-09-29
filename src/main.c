@@ -13,20 +13,25 @@ int main()
 
   systickCount = 0;
 
- const uint32 blinkTime = 500;
- while(1){
-    if( systickCount <= blinkTime ){
+  const uint32 blinkTime = 500;
+  while (1)
+  {
+    if (systickCount <= blinkTime)
+    {
       Port_Write(Port_Off);
-    } 
-    else if( systickCount <= (blinkTime * 2) ){
+    }
+    else if (systickCount <= (blinkTime * 2))
+    {
       Port_Write(Port_On);
     }
-    else{
+    else
+    {
       Port_Write(Port_Off);
       Usart2_Transmit(uartSendChar);
       uartSendChar++;
-      if( uartSendChar > 'c' ){
-          uartSendChar = 'a';
+      if (uartSendChar > 'c')
+      {
+        uartSendChar = 'a';
       }
       systickCount = 0;
     }
