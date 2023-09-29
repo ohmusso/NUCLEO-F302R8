@@ -1,6 +1,7 @@
 #include "clock.h"
 
-#define System_Clock_Hz ((uint32)8000000) /*  8MHz    */
+/* referenced by FreeRTOS*/
+uint32 SystemCoreClock = ((uint32)8000000); /* 8MHz */
 
 #define RCC_BASE_ADDRESS 0x40021000 /*  Reset and clock control RCC  */
 /*  SysTick Control and Status Register */
