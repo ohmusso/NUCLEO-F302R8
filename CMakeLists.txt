@@ -11,13 +11,20 @@ include_directories("${FREERTOS_CONFIG_FILE_DIRECTORY}")
 add_subdirectory(lib/freertos)
 
 # user code
+
+## common user includes
+include_directories(./src)
 include_directories(./src/include)
 
+## driver
 add_subdirectory(src/driver)
 
-add_executable(sample ./src/startup.s ./src/main.c)
+## application
+add_subdirectory(src/app)
 
-target_link_libraries(sample driver freertos_kernel)
+# bios and exe file
+add_executable(sample ./src/startup.s ./src/main.c)
+target_link_libraries(sample freertos_kernel driver app)
 
 # GoogleTest requires at least C++14
 #set(CMAKE_CXX_STANDARD 14)
