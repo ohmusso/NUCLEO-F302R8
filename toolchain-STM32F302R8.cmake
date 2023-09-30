@@ -37,7 +37,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall")
 set(LINKER_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32f3.ld)
 ### linker flags
 #### if use standard library
-##### -nostdlib
+##### -nostdlib: FreeRTOS use memset and memcpy. don't use this option 
 ##### -Wl,--gc-sections
 set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T\"${LINKER_FILE}\" -Wl,-Map=out.map -Wl,--gc-sections")
 ## linker Executable

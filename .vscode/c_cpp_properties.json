@@ -3,8 +3,11 @@
         {
             "name": "STM32",
             "includePath": [
+                "C:/arm-none-eabi/arm-none-eabi/include",
+                "${workspaceFolder}/",
                 "${workspaceFolder}/src/**",
-                "C:/arm-none-eabi/arm-none-eabi/include"
+                "${workspaceFolder}/lib/freertos/include/**",
+                "${workspaceFolder}/lib/freertos/portable/GCC/ARM_CM4F/**"
             ],
             "defines": [
                 "_DEBUG",

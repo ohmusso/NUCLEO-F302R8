@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        ".clang-format": "yaml"
+        ".clang-format": "yaml",
+        "freertos.h": "c"
     },
     "editor.formatOnType": true,
     "editor.formatOnSave": true,
