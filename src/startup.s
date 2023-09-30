@@ -20,7 +20,7 @@
 .weak	Reset_Handler
 .type	Reset_Handler, %function
     Reset_Handler:
-        movs r1, #4             /* r1 = 4 */
+        movs r1, #0             /* r1 = 0 */
         b LoopCopyDataInit      /* jump to LoopCopyDataInit */
 
     CopyDataInit:
