@@ -80,7 +80,9 @@ typedef struct {
 void Clock_Init() {
     stpRCC->AHBENR = Init_RCC_AHBENR;
     stpRCC->APB1ENR = Init_RCC_APB1ENR;
-    stpSYST->CSR = Init_SYST_CSR;
-    stpSYST->RVR = Init_SYST_RVR;
-    stpSYST->CVR = Init_SYST_CVR;
+    /* FreeRTOS initialize and use Systick_Handler. */
+    /* disable follow codes */
+    /* stpSYST->CSR = Init_SYST_CSR; */
+    /* stpSYST->RVR = Init_SYST_RVR; */
+    /* stpSYST->CVR = Init_SYST_CVR; */
 }

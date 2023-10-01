@@ -11,7 +11,7 @@ typedef struct {
     uint32 notUseGTPR;
     uint32 notUsedRTOR;
     uint32 notUsedRQR;
-    uint32 notUsedISR;
+    uint32 ISR;
     uint32 notUsedICR;
     uint32 notUsedRDR;
     uint16 noUsedTDRH;
@@ -73,4 +73,27 @@ void Uart_Init() {
     stpUSART2->CR1 |= USART_CR1_UE;
 }
 
-void Usart2_Transmit(uint8 value) { stpUSART2->TDR = value; }
+#define Uart2_WaitUntilTxComp() \
+    do {                        \
+        ; /* busy wait */       \
+    } while (((stpUSART2->ISR >> 7) & 0x00000001) == 0)
+
+void Usart2_Transmit(uint8 value) {
+    Uart2_WaitUntilTxComp();
+    stpUSART2->TDR = value;
+}
+
+void Usart2_TransmitBytes(const char_t* const str) {
+    int i = 0;
+
+    while (str[i] != '\0') {
+        Uart2_WaitUntilTxComp();
+        stpUSART2->TDR = str[i];
+        i++;
+    }
+
+    Uart2_WaitUntilTxComp();
+    stpUSART2->TDR = '\r';
+    Uart2_WaitUntilTxComp();
+    stpUSART2->TDR = '\n';
+}

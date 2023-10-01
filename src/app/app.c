@@ -1,28 +1,46 @@
 #include <stdint.h>
 
+/* FreeRTOS*/
+#include "FreeRTOS.h"
+#include "task.h"
+
+/* driver */
 #include "driver/port/port.h"
 #include "driver/uart/uart.h"
 
-/* FreeRTOS API */
-/* interupt cycle: 1ms */
-int32_t timer = 0; /* unit: 1ms */
-int8_t uartSendChar = 'a';
-void vApplicationTickHook(void) {
-    const int32_t blinkTime = 500;
+/* app */
+#include "app_tasks.h"
 
-    if (timer <= blinkTime) {
-        Port_Write(Port_On);
-    } else if (timer <= (blinkTime * 2)) {
+/* app tasks */
+void taskAppLedBlink() {
+    const int32_t durationBlink = 500;
+
+    for (;;) {
         Port_Write(Port_Off);
-    } else {
+        vTaskDelay(durationBlink);
         Port_Write(Port_On);
+
+        vTaskDelay(durationBlink);
+    }
+}
+
+void taskAppUartTx() {
+    const int32_t durationTx = 1000;
+    int8_t uartSendChar = 'a';
+
+    for (;;) {
         Usart2_Transmit(uartSendChar);
+
         uartSendChar++;
         if (uartSendChar > 'c') {
             uartSendChar = 'a';
         }
-        timer = 0;
-    }
 
-    timer++;
+        vTaskDelay(durationTx);
+    }
 }
+
+/* FreeRTOS API */
+/* interupt cycle: 1ms */
+int32_t systickCount = 0; /* unit: 1ms */
+void vApplicationTickHook(void) { systickCount++; }
