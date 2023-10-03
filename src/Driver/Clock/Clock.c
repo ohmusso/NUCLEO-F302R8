@@ -81,7 +81,8 @@ void Clock_Init() {
     stpRCC->AHBENR = Init_RCC_AHBENR;
     stpRCC->APB1ENR = Init_RCC_APB1ENR;
     /* FreeRTOS initialize and use Systick_Handler. */
-    /* disable follow codes */
+    /* if enable following codes */
+    /* xPortSysTickHandler is exceptionally called and infinite loop */
     /* stpSYST->CSR = Init_SYST_CSR; */
     /* stpSYST->RVR = Init_SYST_RVR; */
     /* stpSYST->CVR = Init_SYST_CVR; */

@@ -10,23 +10,27 @@
 #include "./app/app_tasks.h"
 
 /* Priorities for tasks. */
-#define APP_TASK_PRIORITY (tskIDLE_PRIORITY)
-#define APP_TASK_APRIORITY (tskIDLE_PRIORITY + 1)
+#define APP_TASK_PRIORITY_LOW (tskIDLE_PRIORITY + 1)
+#define APP_TASK_APRIORITY_MID (tskIDLE_PRIORITY + 2)
+#define APP_TASK_APRIORITY_HIGH (tskIDLE_PRIORITY + 3)
+#define APP_TASK_APRIORITY_UART (tskIDLE_PRIORITY + 4)
 
 int main() {
     Clock_Init();
     Port_Init();
     Uart_Init();
 
-    if (sizeof(uint32) == 4) {
-        Port_Write(Port_On);
-    }
-
     /* create app task*/
-    xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
-                (void *)NULL, APP_TASK_PRIORITY, (TaskHandle_t *)NULL);
+    // xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
+    //             (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
+    xTaskCreate(taskAppLow, "Low", configMINIMAL_STACK_SIZE, (void *)NULL,
+                APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
+    xTaskCreate(taskAppMid, "Mid", configMINIMAL_STACK_SIZE, (void *)NULL,
+                APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
+    xTaskCreate(taskAppHigh, "High", configMINIMAL_STACK_SIZE, (void *)NULL,
+                APP_TASK_APRIORITY_HIGH, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppUartTx, "UartTx", configMINIMAL_STACK_SIZE, (void *)NULL,
-                APP_TASK_APRIORITY, (TaskHandle_t *)NULL);
+                APP_TASK_APRIORITY_UART, (TaskHandle_t *)NULL);
 
     /* start FreeRTOS */
     vTaskStartScheduler();
