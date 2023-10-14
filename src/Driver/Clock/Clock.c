@@ -16,13 +16,13 @@ typedef struct {
     uint32 notUsedAPB2RSTR;
     uint32 notUsedAPB1RSTR;
     uint32 AHBENR;
-    uint32 notUsedAPB2ENR;
+    uint32 APB2ENR;
     uint32 APB1ENR;
     uint32 notUsedBDCR;
     uint32 notUsedCSR;
     uint32 notUsedAHBRSTR;
     uint32 notUsedCFGR2;
-    uint32 notUsedCFGR3;
+    uint32 CFGR3;
 } StRCC;
 
 /* AHBENR */
@@ -31,7 +31,9 @@ typedef struct {
 
 #define RCC_AHAENR_IOPAEN (RCC_AHBENR_Enabled << 17)
 #define RCC_AHBENR_IOPBEN (RCC_AHBENR_Enabled << 18)
-#define Init_RCC_AHBENR (RCC_AHBENR_IOPBEN | RCC_AHAENR_IOPAEN)
+#define RCC_AHBENR_IOPCEN (RCC_AHBENR_Enabled << 19)
+#define Init_RCC_AHBENR \
+    (RCC_AHBENR_IOPCEN | RCC_AHBENR_IOPBEN | RCC_AHAENR_IOPAEN)
 
 /* APB1ENR */
 #define RCC_APB1ENR_Disabled 0x00
@@ -39,6 +41,19 @@ typedef struct {
 
 #define RCC_APB1ENR_USERT2 (RCC_APB1ENR_Enabled << 17)
 #define Init_RCC_APB1ENR (RCC_APB1ENR_USERT2)
+
+/* APB2ENR */
+#define RCC_APB2ENR_Disabled 0x00
+#define RCC_APB2ENR_Enabled 0x01
+
+#define RCC_APB1ENR_TIM1 (RCC_APB2ENR_Enabled << 11)
+#define Init_RCC_APB2ENR (RCC_APB1ENR_TIM1)
+
+/* CFGR3 */
+#define RCC_CFGR3_TIM1SW_PCLK2 0x00
+
+#define RCC_CFGR3_TIM1SW (RCC_CFGR3_TIM1SW_PCLK2 << 8)
+#define Init_RCC_CFGR3 (RCC_CFGR3_TIM1SW)
 
 /* pointer to RCC register */
 #define stpRCC ((StRCC*)(RCC_BASE_ADDRESS))
@@ -79,7 +94,9 @@ typedef struct {
 /*   - cortex System Timer * SYST_RVR           */
 void Clock_Init() {
     stpRCC->AHBENR = Init_RCC_AHBENR;
+    stpRCC->APB2ENR = Init_RCC_APB2ENR;
     stpRCC->APB1ENR = Init_RCC_APB1ENR;
+    stpRCC->CFGR3 = Init_RCC_CFGR3;
     /* FreeRTOS initialize and use Systick_Handler. */
     /* if enable following codes */
     /* xPortSysTickHandler is exceptionally called and infinite loop */

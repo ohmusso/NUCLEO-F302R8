@@ -2,6 +2,7 @@
 
 #define GPIOA_BASE_ADDRESS 0x48000000 /* GPIOA */
 #define GPIOB_BASE_ADDRESS 0x48000400 /* GPIOB */
+#define GPIOC_BASE_ADDRESS 0x48000800 /* GPIOC */
 
 typedef struct {
     uint32 MODER;
@@ -13,7 +14,7 @@ typedef struct {
     uint32 notUsedBSRR;
     uint32 notUsedLCKR;
     uint32 AFRL;
-    uint32 notUsedAFRH;
+    uint32 AFRH;
 } StGPIOX;
 
 /* MODER */
@@ -24,7 +25,12 @@ typedef struct {
 
 #define Init_GPIOA_MODER_02 (GPIOX_MODER_Type_AltFunc << 4)
 #define Init_GPIOA_MODER_03 (GPIOX_MODER_Type_AltFunc << 6)
-#define Init_GPIOA_MODER (Init_GPIOA_MODER_03 | Init_GPIOA_MODER_02)
+#define Init_GPIOA_MODER_08 (GPIOX_MODER_Type_AltFunc << 16)
+#define Init_GPIOA_MODER_09 (GPIOX_MODER_Type_AltFunc << 18)
+#define Init_GPIOA_MODER_10 (GPIOX_MODER_Type_AltFunc << 20)
+#define Init_GPIOA_MODER                                               \
+    (Init_GPIOA_MODER_10 | Init_GPIOA_MODER_09 | Init_GPIOA_MODER_08 | \
+     Init_GPIOA_MODER_03 | Init_GPIOA_MODER_02)
 
 #define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26)
 #define Init_GPIOB_MODER (Init_GPIOB_MODER_13)
@@ -39,20 +45,30 @@ typedef struct {
 
 /* ODR */
 #define GPIOB_ODR_SHIFT_13 ((uint8)13)
+#define GPIOB_ODR_MASK_13 (1 << GPIOB_ODR_SHIFT_13)
 
 /* AFRL */
 #define GPIOA_AFRL_USERT2_TX (0x07 << 8)
 #define GPIOA_AFRL_USERT2_RX (0x07 << 12)
 #define Init_GPIOA_AFRL (GPIOA_AFRL_USERT2_RX | GPIOA_AFRL_USERT2_TX)
 
+/* AFRH */
+#define GPIOA_AFRH_TIM1_CH1 (0x06 << 0)
+#define GPIOA_AFRH_TIM1_CH2 (0x06 << 4)
+#define GPIOA_AFRH_TIM1_CH3 (0x06 << 8)
+#define Init_GPIOA_AFRH \
+    (GPIOA_AFRH_TIM1_CH3 | GPIOA_AFRH_TIM1_CH2 | GPIOA_AFRH_TIM1_CH1)
+
 /* pointer to GPIOX register */
 #define stpGPIOA ((StGPIOX *)(GPIOA_BASE_ADDRESS))
 #define stpGPIOB ((StGPIOX *)(GPIOB_BASE_ADDRESS))
+#define stpGPIOC ((StGPIOX *)(GPIOC_BASE_ADDRESS))
 
 /* Clock must initialized before Port initialize */
 void Port_Init() {
     stpGPIOA->MODER = Init_GPIOA_MODER;
     stpGPIOA->AFRL = Init_GPIOA_AFRL;
+    stpGPIOA->AFRH = Init_GPIOA_AFRH;
 
     stpGPIOB->MODER = Init_GPIOB_MODER;
     stpGPIOB->OSPEEDR = Init_GPIOB_OSPEEDR;
@@ -60,4 +76,8 @@ void Port_Init() {
 
 void Port_Write(PortOnOff value) {
     stpGPIOB->ODR = (uint32)((value & 0x01) << GPIOB_ODR_SHIFT_13);
+}
+
+void Port_Flip() {
+    stpGPIOB->ODR = (uint32)((stpGPIOB->ODR) ^ GPIOB_ODR_MASK_13);
 }

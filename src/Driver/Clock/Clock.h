@@ -5,4 +5,4 @@
 
 extern void Clock_Init();
 
-#endif /* DRIVER_CLOCK_H*/
+#endif /* DRIVER_CLOCK_H */

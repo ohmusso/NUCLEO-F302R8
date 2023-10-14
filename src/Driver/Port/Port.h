@@ -9,6 +9,6 @@ typedef uint8 PortOnOff;
 
 extern void Port_Init();
 extern void Port_Write(PortOnOff value);
-extern void Port_WriteOn();
+extern void Port_Flip();
 
 #endif /* DRIVER_PORT_H*/

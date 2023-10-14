@@ -6,12 +6,15 @@
 
 /* driver */
 #include "driver/port/port.h"
+#include "driver/timer/timer.h"
 #include "driver/uart/uart.h"
 
 /* app */
 #include "app_tasks.h"
 
 int32_t systickCount = 0; /* unit: 1ms */
+
+extern uint32_t tim1IntCnt;
 
 /* app tasks */
 void taskAppLedBlink() {
@@ -27,37 +30,20 @@ void taskAppLedBlink() {
 
 uint8_t uartSendChar = '-';
 
-void taskAppLow() {
-    for (;;) {
-        uartSendChar = '1';
-    }
-}
-
 void taskAppMid() {
     const int32_t durationTx = 500;
-    int32_t preSysTickCount;
+    uint16_t tim1IntCntPre = 0;
 
     for (;;) {
-        preSysTickCount = systickCount;
-        while ((systickCount - preSysTickCount) <= 500) {
-            uartSendChar = '2';
+        if (tim1IntCntPre != tim1IntCnt) {
+            uartSendChar++;
+            tim1IntCntPre = tim1IntCnt;
         }
-        vTaskDelay(durationTx);
-    }
-}
 
-void taskAppHigh() {
-    const int32_t durationTx = 800;
-    int32_t preSysTickCount;
-    uint8_t portValue = Port_Off;
-
-    for (;;) {
-        Port_Write(portValue);
-        portValue++;
-        preSysTickCount = systickCount;
-        while ((systickCount - preSysTickCount) <= 200) {
-            uartSendChar = '3';
+        if (uartSendChar > 'Z') {
+            uartSendChar = '-';
         }
+
         vTaskDelay(durationTx);
     }
 }
