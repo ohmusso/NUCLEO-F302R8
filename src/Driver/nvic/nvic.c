@@ -21,8 +21,12 @@ typedef struct {
 #define NVIC_ISER_Disabled 0x00
 #define NVIC_ISER_Enabled 0x01
 
-#define NVIC_ISER_TIM1_CC_Enabled (NVIC_ISER_Enabled << 27)
-#define Init_NVIC_ISER0 (NVIC_ISER_TIM1_CC_Enabled)
+#define NVIC_ISER0_EXTI03_Enabled (NVIC_ISER_Enabled << 9)
+#define NVIC_ISER0_TIM1_CC_Enabled (NVIC_ISER_Enabled << 27)
+#define Init_NVIC_ISER0 (NVIC_ISER0_TIM1_CC_Enabled | NVIC_ISER0_EXTI03_Enabled)
+
+#define NVIC_ISER1_EXTI10_15_Enabled (NVIC_ISER_Enabled << 8)
+#define Init_NVIC_ISER1 (NVIC_ISER1_EXTI10_15_Enabled)
 
 /* ICPRx */
 #define NVIC_ICPR_Clear 0x01
@@ -33,6 +37,9 @@ typedef struct {
 #define stpISER ((StNVIC_ISER*)(NVIC_ISERx_BASE_ADDRESS))
 #define stpICPR ((StNVIC_ICPR*)(NVIC_ICPRx_BASE_ADDRESS))
 
-void Nvic_Init() { stpISER->ISER0 = Init_NVIC_ISER0; }
+void Nvic_Init() {
+    stpISER->ISER0 = Init_NVIC_ISER0;
+    stpISER->ISER1 = Init_NVIC_ISER1;
+}
 
 inline void Nvic_Clear() { stpICPR->ICPR0 |= NVIC_ICPR_TIM1_CC; }

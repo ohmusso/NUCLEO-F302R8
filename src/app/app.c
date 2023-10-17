@@ -14,7 +14,7 @@
 
 int32_t systickCount = 0; /* unit: 1ms */
 
-extern uint32_t tim1IntCnt;
+extern uint32_t exit3IntCnt;
 
 /* app tasks */
 void taskAppLedBlink() {
@@ -35,9 +35,9 @@ void taskAppMid() {
     uint16_t tim1IntCntPre = 0;
 
     for (;;) {
-        if (tim1IntCntPre != tim1IntCnt) {
+        if (tim1IntCntPre != exit3IntCnt) {
             uartSendChar++;
-            tim1IntCntPre = tim1IntCnt;
+            tim1IntCntPre = exit3IntCnt;
         }
 
         if (uartSendChar > 'Z') {

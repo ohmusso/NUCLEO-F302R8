@@ -83,7 +83,7 @@ g_pfnVectors:
 	.word	0				/* 0058:  */
 	.word	0				/* 005C:  */
 	.word	0				/* 0060:  */
-	.word	0				/* 0064:  */
+	.word	IRQ_EXIT3_Handler /* 0064: EXTI Line3 interrupt */
 	.word	0				/* 0068:  */
 	.word	0				/* 006C:  */
 	.word	0				/* 0070:  */
@@ -114,7 +114,7 @@ g_pfnVectors:
 	.word	0				/* 00D4:  */
 	.word	0				/* 00D8:  */
 	.word	0				/* 00DC:  */
-	.word	0				/* 00E0:  */
+	.word	IRQ_EXIT15_10_Handler /* 00E0: EXTI Line[15:10] interrupts */
 	.word	0				/* 00E4:  */
 	.word	0				/* 00E8:  */
 	.word	0				/* 00EC:  */

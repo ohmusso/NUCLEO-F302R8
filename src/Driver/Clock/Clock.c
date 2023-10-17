@@ -46,8 +46,9 @@ typedef struct {
 #define RCC_APB2ENR_Disabled 0x00
 #define RCC_APB2ENR_Enabled 0x01
 
-#define RCC_APB1ENR_TIM1 (RCC_APB2ENR_Enabled << 11)
-#define Init_RCC_APB2ENR (RCC_APB1ENR_TIM1)
+#define RCC_APB2ENR_TIM1 (RCC_APB2ENR_Enabled << 11)
+#define RCC_APB2ENR_SYSCFG (RCC_APB2ENR_Enabled << 0)
+#define Init_RCC_APB2ENR (RCC_APB2ENR_TIM1 | RCC_APB2ENR_SYSCFG)
 
 /* CFGR3 */
 #define RCC_CFGR3_TIM1SW_PCLK2 0x00

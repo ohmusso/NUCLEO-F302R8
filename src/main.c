@@ -1,7 +1,9 @@
 /* Driver */
 #include "./driver/clock/clock.h"
+#include "./driver/exit/exit.h"
 #include "./driver/nvic/nvic.h"
 #include "./driver/port/port.h"
+#include "./driver/syscfg/syscfg.h"
 #include "./driver/timer/timer.h"
 #include "./driver/uart/uart.h"
 /* FreeRTOS */
@@ -17,15 +19,16 @@
 #define APP_TASK_APRIORITY_HIGH (tskIDLE_PRIORITY + 3)
 #define APP_TASK_APRIORITY_UART (tskIDLE_PRIORITY + 4)
 
-extern uint32 tim1IntCnt;
 int main() {
     Clock_Init();
+    Syscfg_Init();
+    Exit_Init();
     Port_Init();
     Timer_Init();
     Uart_Init();
     Nvic_Init();
 
-    tim1Start();
+    tim1Start3PhasePwm();
 
     /* create app task*/
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
@@ -47,6 +50,12 @@ int main() {
 uint32 tim1IntCnt = 0;
 void IRQ_TIM1_CC_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_CC_Handler() {
-    tim1IntCnt++;
+    tim1Flip3PhasePwm();
     tim1ClearCC1IF();
 }
+
+void IRQ_EXIT3_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_EXIT3_Handler() { Exit_ClearExit3(); }
+
+void IRQ_EXIT15_10_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_EXIT15_10_Handler() { Exit_ClearExit15_10(); }

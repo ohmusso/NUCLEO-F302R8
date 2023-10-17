@@ -10,6 +10,8 @@ extern uint8 tim1IsUIFSet();
 extern uint8 tim1ClearUIF();
 extern uint8 tim1IsCC1IFSet();
 extern uint8 tim1ClearCC1IF();
-extern void tim1Start();
+
+extern void tim1Start3PhasePwm();
+extern void tim1Flip3PhasePwm();
 
 #endif /* DRIVER_TIMER_H */

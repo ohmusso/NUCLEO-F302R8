@@ -8,7 +8,12 @@ typedef uint8 PortOnOff;
 #define Port_On ((PortOnOff)1)
 
 extern void Port_Init();
+extern PortOnOff Port_ReadH1();
+extern PortOnOff Port_ReadH2();
+extern PortOnOff Port_ReadH3();
 extern void Port_Write(PortOnOff value);
 extern void Port_Flip();
+extern void Port_SetMotorDriverEnable();
+extern void Port_SetMotorDriverDisable();
 
 #endif /* DRIVER_PORT_H*/

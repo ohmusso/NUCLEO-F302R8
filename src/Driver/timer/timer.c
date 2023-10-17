@@ -125,10 +125,19 @@ typedef struct {
 /* width =  ARR * 2 / unit =  500 * 2 * 1us = 1000us */
 /*          CMS is Center-aligned mode, so double ARR  */
 #define Init_TIM1_ARR (500)
-#define Init_TIM1_CCR1 \
-    (Init_TIM1_ARR / 2) /* duty =  CCRX / width = 500us / 1000us = 0.5  */
+/* duty =  CCRX / width = 500us / 1000us = 0.5  */
+#define Init_TIM1_CCR1 (Init_TIM1_ARR / 2)
 #define Init_TIM1_CCR2 (Init_TIM1_CCR1)
 #define Init_TIM1_CCR3 (Init_TIM1_CCR1)
+
+/* CCR5 */
+#define TIM1_CCR5_GC5C3_BIT (1 << 31)
+#define TIM1_CCR5_GC5C2_BIT (1 << 30)
+#define TIM1_CCR5_GC5C1_BIT (1 << 29)
+#define TIM1_CCR5_GC5_MASK \
+    (~(TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT))
+#define Init_TIM1_CCR5 \
+    (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT)
 
 /* BDTR */
 #define TIM1_BDTR_MOE_Enable (0x01)
@@ -162,7 +171,8 @@ void Timer_Init() {
     stpTIM1->CCR1 = Init_TIM1_CCR1;
     stpTIM1->CCR2 = Init_TIM1_CCR2;
     stpTIM1->CCR3 = Init_TIM1_CCR3;
-    stpTIM1->BDTR = Init_TIM1_BDTR;
+    stpTIM1->CCMR3 = Init_TIM1_CCMR3;
+    stpTIM1->CCR5 = Init_TIM1_CCR5;
 }
 
 uint16 tim1GetCnt() { return stpTIM1->CNT; }
@@ -173,4 +183,39 @@ uint8 tim1ClearCC1IF() { return mClearTim1CC1IF(); }
 uint8 tim1IsUIFSet() { return mIsTim1UIFSet(); }
 uint8 tim1ClearUIF() { return mClearTim1UIF(); }
 
-void tim1Start() { stpTIM1->CR1 |= TIM1_CR1_CEN; }
+void tim1Start3PhasePwm() {
+    stpTIM1->BDTR = Init_TIM1_BDTR;
+    stpTIM1->CR1 |= TIM1_CR1_CEN;
+}
+
+static uint32 tim13PhasePwmCurrentPhase = 0; /* 0: u, 1: v, 2: w*/
+void tim1Flip3PhasePwm() {
+    uint32 valueRegCCR5 = stpTIM1->CCR5;
+
+    /* reset GC5 */
+    valueRegCCR5 &= TIM1_CCR5_GC5_MASK;
+
+    if (tim13PhasePwmCurrentPhase == 0) {
+        /* pahse u. mask v, w pwm */
+        valueRegCCR5 |= TIM1_CCR5_GC5C2_BIT;
+        valueRegCCR5 |= TIM1_CCR5_GC5C3_BIT;
+    } else if (tim13PhasePwmCurrentPhase == 1) {
+        /* pahse v. mask w, u pwm */
+        valueRegCCR5 |= TIM1_CCR5_GC5C3_BIT;
+        valueRegCCR5 |= TIM1_CCR5_GC5C1_BIT;
+
+    } else {
+        /* pahse 2. mask u, v pwm */
+        valueRegCCR5 |= TIM1_CCR5_GC5C1_BIT;
+        valueRegCCR5 |= TIM1_CCR5_GC5C2_BIT;
+    }
+
+    /* set GC5  */
+    stpTIM1->CCR5 = valueRegCCR5;
+
+    /* progress pahse */
+    tim13PhasePwmCurrentPhase++;
+    if (tim13PhasePwmCurrentPhase > 2) {
+        tim13PhasePwmCurrentPhase = 0;
+    }
+}

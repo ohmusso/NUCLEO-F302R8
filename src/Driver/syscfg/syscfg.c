@@ -1,0 +1,38 @@
+#include "syscfg.h"
+
+#define SYSCFG_BASE_ADDRESS 0x40010000 /* SYSCFG */
+
+typedef struct {
+    uint32 notUsedCFGR1;
+    uint32 reserved;
+    uint32 EXTICR1;
+    uint32 notUsedEXTICR2;
+    uint32 EXTICR3;
+    uint32 EXTICR4;
+    uint32 notUsedCFGR2;
+} StSYSCFG;
+
+/* EXTICRx */
+#define SYSCFG_EXTICRx_SELECT_PA 0x00
+#define SYSCFG_EXTICRx_SELECT_PB 0x01
+#define SYSCFG_EXTICRx_SELECT_PC 0x02
+#define SYSCFG_EXTICRx_SELECT_PD 0x03
+#define SYSCFG_EXTICRx_SELECT_PE 0x04
+
+#define SYSCFG_EXTICR1_EXTI03_SELECT_PB (SYSCFG_EXTICRx_SELECT_PB << 12)
+#define SYSCFG_EXTICR3_EXTI10_SELECT_PB (SYSCFG_EXTICRx_SELECT_PB << 8)
+#define SYSCFG_EXTICR4_EXTI15_SELECT_PA (SYSCFG_EXTICRx_SELECT_PA << 12)
+
+#define Init_SYSCFG_EXTICR1 (SYSCFG_EXTICR1_EXTI03_SELECT_PB)
+#define Init_SYSCFG_EXTICR3 (SYSCFG_EXTICR3_EXTI10_SELECT_PB)
+#define Init_SYSCFG_EXTICR4 (SYSCFG_EXTICR4_EXTI15_SELECT_PA)
+
+/* pointer to SYSCFG register */
+#define stpSYSCFG ((StSYSCFG *)(SYSCFG_BASE_ADDRESS))
+
+/* Clock must initialized before SYSCFG initialize */
+void Syscfg_Init() {
+    stpSYSCFG->EXTICR1 = Init_SYSCFG_EXTICR1;
+    stpSYSCFG->EXTICR3 = Init_SYSCFG_EXTICR3;
+    stpSYSCFG->EXTICR4 = Init_SYSCFG_EXTICR4;
+}
