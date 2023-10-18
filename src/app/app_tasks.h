@@ -8,6 +8,6 @@
 /* app tasks */
 extern void taskAppLedBlink();
 extern void taskAppMid();
-extern void taskAppUartTx();
+extern void taskAppUart();
 
 #endif /* APP_TASK_H */

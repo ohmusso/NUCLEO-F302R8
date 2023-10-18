@@ -35,7 +35,7 @@ int main() {
                 (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppMid, "Mid", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
-    xTaskCreate(taskAppUartTx, "UartTx", configMINIMAL_STACK_SIZE, (void *)NULL,
+    xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_UART, (TaskHandle_t *)NULL);
 
     /* start FreeRTOS */
@@ -56,6 +56,9 @@ void IRQ_TIM1_CC_Handler() {
 
 void IRQ_EXIT3_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_EXIT3_Handler() { Exit_ClearExit3(); }
+
+void IRQ_UART2_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_UART2_Handler() { Usart2_RxIndication(); }
 
 void IRQ_EXIT15_10_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_EXIT15_10_Handler() { Exit_ClearExit15_10(); }

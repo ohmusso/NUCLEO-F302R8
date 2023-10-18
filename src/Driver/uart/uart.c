@@ -13,7 +13,8 @@ typedef struct {
     uint32 notUsedRQR;
     uint32 ISR;
     uint32 notUsedICR;
-    uint32 notUsedRDR;
+    uint8 RDR;
+    uint8 notUsedRDR[3];
     uint16 noUsedTDRH;
     uint8 noUsedTDRL;
     uint8 TDR;
@@ -31,6 +32,8 @@ typedef struct {
 #define USART_CR1_OVER8_08samples 0x01
 #define USART_CR1_OVER8 (USART_CR1_OVER8_16samples << 15)
 
+#define USART_CR1_RXNEIE_Enable (1 << 5)
+
 #define USART_CR1_TE_Disable 0x00
 #define USART_CR1_TE_Enable 0x01
 #define USART_CR1_TE (USART_CR1_TE_Enable << 3)
@@ -44,9 +47,9 @@ typedef struct {
 /* this bit will be written when another setting is doen */
 #define USART_CR1_UE (USART_CR1_UE_Enable << 0)
 
-#define Init_USART2_CR1                                                       \
-    (USART_CR1_M1 | USART_CR1_OVER8_16samples | USART_CR1_M0 | USART_CR1_TE | \
-     USART_CR1_RE)
+#define Init_USART2_CR1                                        \
+    (USART_CR1_M1 | USART_CR1_OVER8_16samples | USART_CR1_M0 | \
+     USART_CR1_RXNEIE_Enable | USART_CR1_TE | USART_CR1_RE)
 
 /* CR2 */
 #define USART_CR2_STOP_1bit 0x00
@@ -64,6 +67,9 @@ typedef struct {
 
 /* pointer to GPIOX register */
 #define stpUSART2 ((StUSART*)(USART2_BASE_ADDRESS))
+
+static void enqueueUsart2RxQueue(uint8 data);
+static int dequeueUsart2RxQueue();
 
 /* Clock must initialized before Port initialize */
 void Uart_Init() {
@@ -97,3 +103,44 @@ void Usart2_TransmitBytes(const char_t* const str) {
     Uart2_WaitUntilTxComp();
     stpUSART2->TDR = '\n';
 }
+
+/* Return */
+/*  - UartRetFetchData */
+/*  - UartRetNoData */
+UartRetType Uart2_ReadData(RxDataType* data) {
+    UartRetType ret;
+    int rxData = dequeueUsart2RxQueue();
+    if (rxData >= 0) {
+        *(data) = (RxDataType)rxData;
+        ret = UartRetFetchData;
+    } else {
+        ret = UartRetNoData;
+    }
+    return ret;
+}
+
+#define UART2_RX_QUEUE_SIZE 4
+static int usart2RxQueue[UART2_RX_QUEUE_SIZE];
+static int usart2RxQueueFront = 0;
+static int usart2RxQueueRear = 0;
+static void enqueueUsart2RxQueue(uint8 data) {
+    if ((usart2RxQueueRear + 1) % UART2_RX_QUEUE_SIZE == usart2RxQueueFront) {
+        return;
+    }
+
+    usart2RxQueue[usart2RxQueueRear] = (int)data;
+    usart2RxQueueRear = (usart2RxQueueRear + 1) % UART2_RX_QUEUE_SIZE;
+}
+
+static int dequeueUsart2RxQueue() {
+    if (usart2RxQueueFront == usart2RxQueueRear) {
+        return -1;
+    }
+
+    int data = usart2RxQueue[usart2RxQueueFront];
+    usart2RxQueueFront = (usart2RxQueueFront + 1) % UART2_RX_QUEUE_SIZE;
+    return data;
+}
+
+/* use in interrupt context */
+void Usart2_RxIndication() { enqueueUsart2RxQueue(stpUSART2->RDR); }

@@ -14,8 +14,6 @@
 
 int32_t systickCount = 0; /* unit: 1ms */
 
-extern uint32_t exit3IntCnt;
-
 /* app tasks */
 void taskAppLedBlink() {
     const int32_t durationBlink = 500;
@@ -32,27 +30,21 @@ uint8_t uartSendChar = '-';
 
 void taskAppMid() {
     const int32_t durationTx = 500;
-    uint16_t tim1IntCntPre = 0;
 
     for (;;) {
-        if (tim1IntCntPre != exit3IntCnt) {
-            uartSendChar++;
-            tim1IntCntPre = exit3IntCnt;
-        }
-
-        if (uartSendChar > 'Z') {
-            uartSendChar = '-';
-        }
-
         vTaskDelay(durationTx);
     }
 }
 
-void taskAppUartTx() {
+void taskAppUart() {
     const int32_t durationTx = 100;
+    RxDataType rxData = '-';
 
     for (;;) {
-        Usart2_Transmit(uartSendChar);
+        if (Uart2_ReadData(&rxData) == UartRetFetchData) {
+            /* echo back */
+            Usart2_Transmit(rxData);
+        }
         vTaskDelay(durationTx);
     }
 }
