@@ -9,6 +9,12 @@ Try to blink LED on the board.
 * CPU: Arm Cortex-M4. Single core.
 * Internal Clock: 8MHz
 
+### X-NUCLEO-IHM07M1
+
+Motor driver.
+
+<https://www.st.com/ja/ecosystems/x-nucleo-ihm07m1.html>
+
 ### USB Cable mini B
 
 Connect board and PC.

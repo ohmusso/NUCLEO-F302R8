@@ -22,8 +22,11 @@ typedef struct {
 #define NVIC_ISER_Enabled 0x01
 
 #define NVIC_ISER0_EXTI03_Enabled (NVIC_ISER_Enabled << 9)
+#define NVIC_ISER0_TIM1_UP_Enabled (NVIC_ISER_Enabled << 25)
 #define NVIC_ISER0_TIM1_CC_Enabled (NVIC_ISER_Enabled << 27)
 #define Init_NVIC_ISER0 (NVIC_ISER0_TIM1_CC_Enabled | NVIC_ISER0_EXTI03_Enabled)
+// #define Init_NVIC_ISER0 (NVIC_ISER0_TIM1_UP_Enabled |
+// NVIC_ISER0_EXTI03_Enabled)
 
 #define NVIC_ISER1_USART2_Enabled (NVIC_ISER_Enabled << 6)
 #define NVIC_ISER1_EXTI10_15_Enabled (NVIC_ISER_Enabled << 8)

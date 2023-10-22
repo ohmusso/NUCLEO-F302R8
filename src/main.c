@@ -46,6 +46,11 @@ int main() {
 
 /* interupt handler */
 uint32 tim1IntCnt = 0;
+void IRQ_TIM1_UP_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_TIM1_UP_Handler() {
+    tim1Flip3PhasePwm();
+    tim1ClearUIF();
+}
 void IRQ_TIM1_CC_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_CC_Handler() {
     tim1Flip3PhasePwm();

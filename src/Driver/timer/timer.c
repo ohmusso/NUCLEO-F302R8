@@ -63,6 +63,10 @@ typedef struct {
 #define TIM1_DIER_CCXIE_Enable (0x01)
 #define TIM1_DIER_CC1IE (TIM1_DIER_CCXIE_Enable << 1)
 
+#define TIM1_DIER_UIE_Enable (0x01)
+#define TIM1_DIER_UIE (TIM1_DIER_UIE_Enable << 0)
+
+// #define Init_TIM1_DIER (TIM1_DIER_UIE_Enable)
 #define Init_TIM1_DIER (TIM1_DIER_CC1IE)
 
 /* SR */

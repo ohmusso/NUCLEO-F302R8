@@ -99,7 +99,7 @@ g_pfnVectors:
 	.word	0				/* 0098:  */
 	.word	0				/* 009C:  */
 	.word	0				/* 00A0:  */
-	.word	0				/* 00A4:  */
+	.word	IRQ_TIM1_UP_Handler	/* 00A4: TIM1 update interrupt */
 	.word	0				/* 00A8:  */
 	.word	IRQ_TIM1_CC_Handler	/* 00AC:TIM1 capture copare interrupt */
 	.word	0				/* 00B0:  */
