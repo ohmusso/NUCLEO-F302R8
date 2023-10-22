@@ -2,12 +2,11 @@
 #define APP_TASK_H
 
 /* FreeRTOS */
-// #include "FreeRTOS.h"
-// #include "task.h"
+#include "Queue.h"
 
 /* app tasks */
 extern void taskAppLedBlink();
-extern void taskAppMid();
+extern void taskAppMotor();
 extern void taskAppUart();
 
 #endif /* APP_TASK_H */

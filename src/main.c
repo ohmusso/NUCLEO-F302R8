@@ -28,12 +28,10 @@ int main() {
     Uart_Init();
     Nvic_Init();
 
-    tim1Start3PhasePwm();
-
     /* create app task*/
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
                 (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
-    xTaskCreate(taskAppMid, "Mid", configMINIMAL_STACK_SIZE, (void *)NULL,
+    xTaskCreate(taskAppMotor, "Motor", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_UART, (TaskHandle_t *)NULL);

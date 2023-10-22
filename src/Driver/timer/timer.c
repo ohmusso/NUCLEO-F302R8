@@ -137,7 +137,7 @@ typedef struct {
 #define TIM1_CCR5_GC5_MASK \
     (~(TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT))
 #define Init_TIM1_CCR5 \
-    (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT)
+    (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT) /* mask pwm v, w */
 
 /* BDTR */
 #define TIM1_BDTR_MOE_Enable (0x01)
@@ -188,32 +188,35 @@ void tim1Start3PhasePwm() {
     stpTIM1->CR1 |= TIM1_CR1_CEN;
 }
 
+void tim1Set3PhasePwm(uint16 frequency, uint16 duty) {
+    stpTIM1->ARR = frequency;
+    stpTIM1->CCR1 = duty;
+    stpTIM1->CCR2 = duty;
+    stpTIM1->CCR3 = duty;
+}
+
 static uint32 tim13PhasePwmCurrentPhase = 0; /* 0: u, 1: v, 2: w*/
 void tim1Flip3PhasePwm() {
     uint32 valueRegCCR5 = stpTIM1->CCR5;
 
-    /* reset GC5 */
+    /* clear GC5 */
     valueRegCCR5 &= TIM1_CCR5_GC5_MASK;
 
     if (tim13PhasePwmCurrentPhase == 0) {
         /* pahse u. mask v, w pwm */
-        valueRegCCR5 |= TIM1_CCR5_GC5C2_BIT;
-        valueRegCCR5 |= TIM1_CCR5_GC5C3_BIT;
+        valueRegCCR5 |= (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT);
     } else if (tim13PhasePwmCurrentPhase == 1) {
         /* pahse v. mask w, u pwm */
-        valueRegCCR5 |= TIM1_CCR5_GC5C3_BIT;
-        valueRegCCR5 |= TIM1_CCR5_GC5C1_BIT;
-
+        valueRegCCR5 |= (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C1_BIT);
     } else {
-        /* pahse 2. mask u, v pwm */
-        valueRegCCR5 |= TIM1_CCR5_GC5C1_BIT;
-        valueRegCCR5 |= TIM1_CCR5_GC5C2_BIT;
+        /* pahse w. mask u, v pwm */
+        valueRegCCR5 |= (TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT);
     }
 
     /* set GC5  */
     stpTIM1->CCR5 = valueRegCCR5;
 
-    /* progress pahse */
+    /* increment pahse */
     tim13PhasePwmCurrentPhase++;
     if (tim13PhasePwmCurrentPhase > 2) {
         tim13PhasePwmCurrentPhase = 0;

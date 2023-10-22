@@ -26,22 +26,69 @@ void taskAppLedBlink() {
     }
 }
 
-uint8_t uartSendChar = '-';
+/* Motor spec */
+/* 3Phase u, v, w */
+/* Poles number: 7 */
+/* 1Phase electrical angle: 17.1[deg] */
+#define APP_MOTOR_SPEED_LEVEL_MAX 3
+#define APP_3PHASE_PWM_CFG_LEVEL1_FREQ ((uint16)23750) /* 60[rpm] */
+#define APP_3PHASE_PWM_CFG_LEVEL1_DUTY (APP_3PHASE_PWM_CFG_LEVEL1_FREQ / 2)
+#define APP_3PHASE_PWM_CFG_LEVEL2_FREQ ((uint16)11875) /* 120[rpm] */
+#define APP_3PHASE_PWM_CFG_LEVEL2_DUTY (APP_3PHASE_PWM_CFG_LEVEL2_FREQ / 2)
+#define APP_3PHASE_PWM_CFG_LEVEL3_FREQ ((uint16)5937) /* 240[rpm] */
+#define APP_3PHASE_PWM_CFG_LEVEL3_DUTY (APP_3PHASE_PWM_CFG_LEVEL3_FREQ / 2)
 
-void taskAppMid() {
+typedef struct {
+    uint16 frequency;
+    uint16 duty;
+} Tim13PhasePwmCfg_t;
+
+static const Tim13PhasePwmCfg_t pwmSetting[APP_MOTOR_SPEED_LEVEL_MAX] = {
+    {APP_3PHASE_PWM_CFG_LEVEL1_FREQ, APP_3PHASE_PWM_CFG_LEVEL1_DUTY},
+    {APP_3PHASE_PWM_CFG_LEVEL2_FREQ, APP_3PHASE_PWM_CFG_LEVEL2_DUTY},
+    {APP_3PHASE_PWM_CFG_LEVEL3_FREQ, APP_3PHASE_PWM_CFG_LEVEL3_DUTY}};
+
+static uint8_t motorSpdLvlRef = 0;
+
+void taskAppMotor() {
     const int32_t durationTx = 500;
+    uint8_t motorSpdLvl = 0;
+
+    tim1Set3PhasePwm(APP_3PHASE_PWM_CFG_LEVEL1_FREQ,
+                     APP_3PHASE_PWM_CFG_LEVEL1_DUTY);
+    Port_SetMotorDriverEnable();
+    tim1Start3PhasePwm();
 
     for (;;) {
+        if (motorSpdLvl != motorSpdLvlRef) {
+            motorSpdLvl = motorSpdLvlRef;
+            tim1Set3PhasePwm(pwmSetting[motorSpdLvl].frequency,
+                             pwmSetting[motorSpdLvl].duty);
+        }
         vTaskDelay(durationTx);
     }
 }
 
 void taskAppUart() {
     const int32_t durationTx = 100;
-    RxDataType rxData = '-';
+    RxDataType rxData = '\0';
 
     for (;;) {
         if (Uart2_ReadData(&rxData) == UartRetFetchData) {
+            /* update motor speed reference*/
+            if (rxData == '+') {
+                tim1Flip3PhasePwm();
+                if (motorSpdLvlRef < APP_MOTOR_SPEED_LEVEL_MAX) {
+                    motorSpdLvlRef++;
+                }
+            } else if (rxData == '-') {
+                if (motorSpdLvlRef > 0) {
+                    motorSpdLvlRef--;
+                }
+            } else {
+                /* nop */
+            }
+
             /* echo back */
             Usart2_Transmit(rxData);
         }
