@@ -8,7 +8,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/timer/timer.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/nvic/nvic.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/syscfg/syscfg.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/exit/exit.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/exti/exti.c"
 )
 
 # add_executable(Driver ${SRCS})

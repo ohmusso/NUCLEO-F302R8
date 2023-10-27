@@ -1,6 +1,6 @@
 /* Driver */
 #include "./driver/clock/clock.h"
-#include "./driver/exit/exit.h"
+#include "./driver/exti/exti.h"
 #include "./driver/nvic/nvic.h"
 #include "./driver/port/port.h"
 #include "./driver/syscfg/syscfg.h"
@@ -22,7 +22,7 @@
 int main() {
     Clock_Init();
     Syscfg_Init();
-    Exit_Init();
+    Exti_Init();
     Port_Init();
     Timer_Init();
     Uart_Init();
@@ -57,11 +57,11 @@ void IRQ_TIM1_CC_Handler() {
     tim1ClearCC1IF();
 }
 
-void IRQ_EXIT3_Handler() __attribute__((interrupt("IRQ")));
-void IRQ_EXIT3_Handler() { Exit_ClearExit3(); }
+void IRQ_EXTI3_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_EXTI3_Handler() { Exti_ClearExti3(); }
 
 void IRQ_UART2_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_UART2_Handler() { Usart2_RxIndication(); }
 
-void IRQ_EXIT15_10_Handler() __attribute__((interrupt("IRQ")));
-void IRQ_EXIT15_10_Handler() { Exit_ClearExit15_10(); }
+void IRQ_EXTI15_10_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_EXTI15_10_Handler() { Exti_ClearExti15_10(); }
