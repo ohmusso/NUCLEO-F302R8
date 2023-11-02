@@ -11,9 +11,15 @@ Try to blink LED on the board.
 
 ### X-NUCLEO-IHM07M1
 
-Motor driver.
+NUCLEO board extension of motor driver.
 
 <https://www.st.com/ja/ecosystems/x-nucleo-ihm07m1.html>
+
+#### L6230
+
+Motor driver.
+
+<https://www.st.com/en/motor-drivers/l6230.html?rt=um&id=UM1943>
 
 ### USB Cable mini B
 
@@ -77,7 +83,7 @@ sample.bin will be created at build directory.
 
 LD2 will be blinking.
 
-### copu binary to usb drive
+### copy binary to usb drive
 
 ``` powershell
 Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
