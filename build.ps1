@@ -13,6 +13,8 @@ Set-Alias objcopy C:\arm-none-eabi\bin\arm-none-eabi-objcopy.exe
 objcopy -O binary ./build/sample.elf ./build/sample.bin
 
 # その他コマンド
+## 書き込み
+### Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
 ## デバッガ gdb
 ### Set-Alias gdb C:\arm-none-eabi\bin\arm-none-eabi-gdb.exe
 ### gdb ./build/sample.elf

@@ -155,11 +155,11 @@ typedef struct {
 /* macro */
 /* SR */
 #define mIsTim1UIFSet() \
-    ((((stpTIM1->SR && (~TIM1_SR_UIF_BIT)) >> TIM1_SR_UIF_SHIFT)) != 0)
+    ((((stpTIM1->SR & (~TIM1_SR_UIF_BIT)) >> TIM1_SR_UIF_SHIFT)) != 0)
 #define mClearTim1UIF() (stpTIM1->SR &= (~TIM1_SR_UIF_BIT))
 
 #define mIsTim1CC1IFSet() \
-    ((((stpTIM1->SR && (~TIM1_SR_CC1IF_BIT)) >> TIM1_SR_CC1IF_SHIFT)) != 0)
+    ((((stpTIM1->SR & (~TIM1_SR_CC1IF_BIT)) >> TIM1_SR_CC1IF_SHIFT)) != 0)
 #define mClearTim1CC1IF() (stpTIM1->SR &= (~TIM1_SR_CC1IF_BIT))
 
 /* Clock must initialized before Port initialize */

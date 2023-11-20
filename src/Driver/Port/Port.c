@@ -23,8 +23,10 @@ typedef struct {
 #define GPIOX_MODER_Type_AltFunc 0x02
 #define GPIOX_MODER_Type_Analog 0x03
 
-#define Init_GPIOA_MODER_02 (GPIOX_MODER_Type_AltFunc << 4) /* UART2 Tx*/
-#define Init_GPIOA_MODER_03 (GPIOX_MODER_Type_AltFunc << 6) /* UART2 Rx*/
+/* GPIOA */
+#define Init_GPIOA_MODER_02 (GPIOX_MODER_Type_AltFunc << 4) /* UART2 Tx */
+#define Init_GPIOA_MODER_03 (GPIOX_MODER_Type_AltFunc << 6) /* UART2 Rx */
+#define Init_GPIOA_MODER_07 (GPIOX_MODER_Type_Analog << 14) /* BEMF3 */
 #define Init_GPIOA_MODER_08 \
     (GPIOX_MODER_Type_AltFunc << 16) /* Motor IN1(TIM1 CC1) */
 #define Init_GPIOA_MODER_09 \
@@ -34,18 +36,24 @@ typedef struct {
 #define Init_GPIOA_MODER_15 (GPIOX_MODER_Type_Input << 30) /* H1 */
 #define Init_GPIOA_MODER                                               \
     (Init_GPIOA_MODER_15 | Init_GPIOA_MODER_10 | Init_GPIOA_MODER_09 | \
-     Init_GPIOA_MODER_08 | Init_GPIOA_MODER_03 | Init_GPIOA_MODER_02)
+     Init_GPIOA_MODER_08 | Init_GPIOA_MODER_07 | Init_GPIOA_MODER_03 | \
+     Init_GPIOA_MODER_02)
 
-#define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* LED */
+/* GPIOB */
+#define Init_GPIOB_MODER_00 (GPIOX_MODER_Type_Analog << 0)     /* BEMF2 */
 #define Init_GPIOB_MODER_03 (GPIOX_MODER_Type_Input << 6)      /* H2 */
+#define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* LED */
 #define Init_GPIOB_MODER_10 (GPIOX_MODER_Type_Input << 20)     /* H3 */
-#define Init_GPIOB_MODER (Init_GPIOB_MODER_13)
+#define Init_GPIOB_MODER (Init_GPIOB_MODER_13 | Init_GPIOB_MODER_00)
 
+/* GPIOC */
+#define Init_GPIOC_MODER_03 (GPIOX_MODER_Type_Analog << 6)     /* BEMF1 */
 #define Init_GPIOC_MODER_11 (GPIOX_MODER_Type_GenOutput << 22) /* Motor EN1 */
 #define Init_GPIOC_MODER_12 (GPIOX_MODER_Type_GenOutput << 24) /* Motor EN2 */
 #define Init_GPIOC_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* Motor EN3 */
-#define Init_GPIOC_MODER \
-    (Init_GPIOC_MODER_13 | Init_GPIOC_MODER_12 | Init_GPIOC_MODER_11)
+#define Init_GPIOC_MODER                                               \
+    (Init_GPIOC_MODER_13 | Init_GPIOC_MODER_12 | Init_GPIOC_MODER_11 | \
+     Init_GPIOC_MODER_03)
 
 /* OSPEEDR */
 #define GPIOX_OSPEEDR_Type_Low 0x00
@@ -94,13 +102,16 @@ typedef struct {
 
 /* Clock must initialized before Port initialize */
 void Port_Init() {
+    /* GPIOA */
     stpGPIOA->MODER = Init_GPIOA_MODER;
     stpGPIOA->AFRL = Init_GPIOA_AFRL;
     stpGPIOA->AFRH = Init_GPIOA_AFRH;
 
+    /* GPIOB */
     stpGPIOB->MODER = Init_GPIOB_MODER;
     stpGPIOB->OSPEEDR = Init_GPIOB_OSPEEDR;
 
+    /* GPIOC */
     stpGPIOC->MODER = Init_GPIOC_MODER;
 }
 

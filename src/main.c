@@ -1,4 +1,5 @@
 /* Driver */
+#include "./driver/adc/adc.h"
 #include "./driver/clock/clock.h"
 #include "./driver/exti/exti.h"
 #include "./driver/nvic/nvic.h"
@@ -26,6 +27,8 @@ int main() {
     Port_Init();
     Timer_Init();
     Uart_Init();
+    ADC1_Init();
+
     Nvic_Init();
 
     /* create app task*/

@@ -32,8 +32,10 @@ typedef struct {
 #define RCC_AHAENR_IOPAEN (RCC_AHBENR_Enabled << 17)
 #define RCC_AHBENR_IOPBEN (RCC_AHBENR_Enabled << 18)
 #define RCC_AHBENR_IOPCEN (RCC_AHBENR_Enabled << 19)
-#define Init_RCC_AHBENR \
-    (RCC_AHBENR_IOPCEN | RCC_AHBENR_IOPBEN | RCC_AHAENR_IOPAEN)
+#define RCC_AHBENR_ADC12EN (RCC_AHBENR_Enabled << 28)
+#define Init_RCC_AHBENR                                           \
+    (RCC_AHBENR_ADC12EN | RCC_AHBENR_IOPCEN | RCC_AHBENR_IOPBEN | \
+     RCC_AHAENR_IOPAEN)
 
 /* APB1ENR */
 #define RCC_APB1ENR_Disabled 0x00
