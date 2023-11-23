@@ -13,7 +13,11 @@ extern PortOnOff Port_ReadH2();
 extern PortOnOff Port_ReadH3();
 extern void Port_Write(PortOnOff value);
 extern void Port_Flip();
-extern void Port_SetMotorDriverEnable();
-extern void Port_SetMotorDriverDisable();
+
+extern void Port_SetMotorDriverEnable(void);
+extern void Port_SetMotorDriverDisable(void);
+extern void Port_SetMotorDriverEnUV(void);
+extern void Port_SetMotorDriverEnVW(void);
+extern void Port_SetMotorDriverEnWU(void);
 
 #endif /* DRIVER_PORT_H*/

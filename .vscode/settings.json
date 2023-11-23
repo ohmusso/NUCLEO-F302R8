@@ -4,7 +4,9 @@
         "freertos.h": "c",
         "app_task.h": "c",
         "uart.h": "c",
-        "platform_types.h": "c"
+        "platform_types.h": "c",
+        "app_tasks.h": "c",
+        "syscfg.h": "c"
     },
     "editor.formatOnType": true,
     "editor.formatOnSave": true,

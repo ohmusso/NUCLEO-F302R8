@@ -192,8 +192,8 @@ void tim1Start3PhasePwm() {
     stpTIM1->CR1 |= TIM1_CR1_CEN;
 }
 
-void tim1Set3PhasePwm(uint16 frequency, uint16 duty) {
-    stpTIM1->ARR = frequency;
+void tim1Set3PhasePwmCfg(uint16 width, uint16 duty) {
+    stpTIM1->ARR = width;
     stpTIM1->CCR1 = duty;
     stpTIM1->CCR2 = duty;
     stpTIM1->CCR3 = duty;
@@ -225,4 +225,43 @@ void tim1Flip3PhasePwm() {
     if (tim13PhasePwmCurrentPhase > 2) {
         tim13PhasePwmCurrentPhase = 0;
     }
+}
+
+void timSet6StepMotorPhaseU(void) {
+    uint32 valueRegCCR5 = stpTIM1->CCR5;
+
+    /* clear GC5 */
+    valueRegCCR5 &= TIM1_CCR5_GC5_MASK;
+
+    /* phase u:  u: high, v: low, w: low */
+    valueRegCCR5 |= (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C2_BIT);
+
+    /* set GC5  */
+    stpTIM1->CCR5 = valueRegCCR5;
+}
+
+void timSet6StepMotorPhaseV(void) {
+    uint32 valueRegCCR5 = stpTIM1->CCR5;
+
+    /* clear GC5 */
+    valueRegCCR5 &= TIM1_CCR5_GC5_MASK;
+
+    /* phase v:  u: low, v: high, w: low */
+    valueRegCCR5 |= (TIM1_CCR5_GC5C3_BIT | TIM1_CCR5_GC5C1_BIT);
+
+    /* set GC5  */
+    stpTIM1->CCR5 = valueRegCCR5;
+}
+
+void timSet6StepMotorPhaseW(void) {
+    uint32 valueRegCCR5 = stpTIM1->CCR5;
+
+    /* clear GC5 */
+    valueRegCCR5 &= TIM1_CCR5_GC5_MASK;
+
+    /* phase w:  u: low, v: low, w: high */
+    valueRegCCR5 |= (TIM1_CCR5_GC5C2_BIT | TIM1_CCR5_GC5C1_BIT);
+
+    /* set GC5  */
+    stpTIM1->CCR5 = valueRegCCR5;
 }

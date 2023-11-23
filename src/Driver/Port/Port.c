@@ -48,11 +48,11 @@ typedef struct {
 
 /* GPIOC */
 #define Init_GPIOC_MODER_03 (GPIOX_MODER_Type_Analog << 6)     /* BEMF1 */
-#define Init_GPIOC_MODER_11 (GPIOX_MODER_Type_GenOutput << 22) /* Motor EN1 */
-#define Init_GPIOC_MODER_12 (GPIOX_MODER_Type_GenOutput << 24) /* Motor EN2 */
-#define Init_GPIOC_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* Motor EN3 */
+#define Init_GPIOC_MODER_10 (GPIOX_MODER_Type_GenOutput << 20) /* Motor EN1 */
+#define Init_GPIOC_MODER_11 (GPIOX_MODER_Type_GenOutput << 22) /* Motor EN2 */
+#define Init_GPIOC_MODER_12 (GPIOX_MODER_Type_GenOutput << 24) /* Motor EN3 */
 #define Init_GPIOC_MODER                                               \
-    (Init_GPIOC_MODER_13 | Init_GPIOC_MODER_12 | Init_GPIOC_MODER_11 | \
+    (Init_GPIOC_MODER_12 | Init_GPIOC_MODER_11 | Init_GPIOC_MODER_10 | \
      Init_GPIOC_MODER_03)
 
 /* OSPEEDR */
@@ -75,9 +75,9 @@ typedef struct {
 #define GPIOB_ODR_SHIFT_13 ((uint8)13)
 #define GPIOB_ODR_MASK_13 (1 << GPIOB_ODR_SHIFT_13)
 
+#define GPIOX_ODR_BIT10 (1 << 10)
 #define GPIOX_ODR_BIT11 (1 << 11)
 #define GPIOX_ODR_BIT12 (1 << 12)
-#define GPIOX_ODR_BIT13 (1 << 13)
 
 /* AFRL */
 #define GPIOA_AFRL_USERT2_TX (0x07 << 8)
@@ -135,14 +135,41 @@ void Port_Flip() {
     stpGPIOB->ODR = (uint32)((stpGPIOB->ODR) ^ GPIOB_ODR_MASK_13);
 }
 
-void Port_SetMotorDriverEnable() {
-    stpGPIOC->ODR |= GPIOX_ODR_BIT11;
-    stpGPIOC->ODR |= GPIOX_ODR_BIT12;
-    stpGPIOC->ODR |= GPIOX_ODR_BIT13;
+/* Motor Driver Enable */
+#define mMotorDriverEnableU() stpGPIOC->ODR |= GPIOX_ODR_BIT10
+#define mMotorDriverEnableV() stpGPIOC->ODR |= GPIOX_ODR_BIT11
+#define mMotorDriverEnableW() stpGPIOC->ODR |= GPIOX_ODR_BIT12
+/* Motor Driver Disable */
+#define mMotorDriverDisableU() stpGPIOC->ODR &= (~GPIOX_ODR_BIT10)
+#define mMotorDriverDisableV() stpGPIOC->ODR &= (~GPIOX_ODR_BIT11)
+#define mMotorDriverDisableW() stpGPIOC->ODR &= (~GPIOX_ODR_BIT12)
+
+void Port_SetMotorDriverEnable(void) {
+    mMotorDriverEnableU();
+    mMotorDriverEnableV();
+    mMotorDriverEnableW();
 }
 
-void Port_SetMotorDriverDisable() {
-    stpGPIOC->ODR &= (~GPIOX_ODR_BIT11);
-    stpGPIOC->ODR &= (~GPIOX_ODR_BIT12);
-    stpGPIOC->ODR &= (~GPIOX_ODR_BIT13);
+void Port_SetMotorDriverDisable(void) {
+    mMotorDriverDisableU();
+    mMotorDriverDisableV();
+    mMotorDriverDisableW();
+}
+
+void Port_SetMotorDriverEnUV(void) {
+    mMotorDriverEnableU();
+    mMotorDriverEnableV();
+    mMotorDriverDisableW();
+}
+
+void Port_SetMotorDriverEnVW(void) {
+    mMotorDriverDisableU();
+    mMotorDriverEnableV();
+    mMotorDriverEnableW();
+}
+
+void Port_SetMotorDriverEnWU(void) {
+    mMotorDriverEnableU();
+    mMotorDriverDisableV();
+    mMotorDriverEnableW();
 }

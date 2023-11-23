@@ -5,6 +5,7 @@
 #include "task.h"
 
 /* driver */
+#include "driver/adc/adc.h"
 #include "driver/port/port.h"
 #include "driver/timer/timer.h"
 #include "driver/uart/uart.h"
@@ -15,7 +16,7 @@
 int32_t systickCount = 0; /* unit: 1ms */
 
 /* app tasks */
-void taskAppLedBlink() {
+void taskAppLedBlink(void* pvParameters) {
     const int32_t durationBlink = 500;
 
     for (;;) {
@@ -26,54 +27,80 @@ void taskAppLedBlink() {
     }
 }
 
+typedef struct {
+    uint16 width;
+    uint16 duty;
+    TickType_t phaseTime;
+} Tim13PhasePwmCfg_t;
+
 /* Motor spec */
 /* 3Phase u, v, w */
 /* Poles number: 7 */
 /* 1Phase electrical angle: 17.1[deg] */
-#define APP_MOTOR_SPEED_LEVEL_MAX 4
-#define APP_3PHASE_PWM_CFG_STOP_FREQ ((uint16)23750) /* 60[rpm] */
-#define APP_3PHASE_PWM_CFG_STOP_DUTY (0)
-#define APP_3PHASE_PWM_CFG_LEVEL1_FREQ ((uint16)23750) /* 60[rpm] */
-#define APP_3PHASE_PWM_CFG_LEVEL1_DUTY (APP_3PHASE_PWM_CFG_LEVEL1_FREQ / 2)
-#define APP_3PHASE_PWM_CFG_LEVEL2_FREQ ((uint16)11875) /* 120[rpm] */
-#define APP_3PHASE_PWM_CFG_LEVEL2_DUTY (APP_3PHASE_PWM_CFG_LEVEL2_FREQ / 2)
-#define APP_3PHASE_PWM_CFG_LEVEL3_FREQ ((uint16)5937) /* 240[rpm] */
-#define APP_3PHASE_PWM_CFG_LEVEL3_DUTY (APP_3PHASE_PWM_CFG_LEVEL3_FREQ / 2)
+#define mApp3phaseCfgPwmWitdh \
+    ((uint16)25) /* pwm center aligned mode: width = ARR*2 = 50[us] */
 
-typedef struct {
-    uint16 frequency;
-    uint16 duty;
-} Tim13PhasePwmCfg_t;
-
-static const Tim13PhasePwmCfg_t pwmSetting[APP_MOTOR_SPEED_LEVEL_MAX] = {
-    {APP_3PHASE_PWM_CFG_STOP_FREQ, APP_3PHASE_PWM_CFG_STOP_DUTY},
-    {APP_3PHASE_PWM_CFG_LEVEL1_FREQ, APP_3PHASE_PWM_CFG_LEVEL1_DUTY},
-    {APP_3PHASE_PWM_CFG_LEVEL2_FREQ, APP_3PHASE_PWM_CFG_LEVEL2_DUTY},
-    {APP_3PHASE_PWM_CFG_LEVEL3_FREQ, APP_3PHASE_PWM_CFG_LEVEL3_DUTY}};
+#define mAppMotorSpeedMax 4
+static const Tim13PhasePwmCfg_t pwmSetting[mAppMotorSpeedMax] = {
+    /* stop */
+    {mApp3phaseCfgPwmWitdh, 0, 0},
+    /* 1phase: 48[ms], 60[rpm] */
+    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 6, 48},
+    /* 1phase: 48[ms], 120[rpm] */
+    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 3, 24},
+    /* 1phase: 24[ms], 240[rpm] */
+    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 2, 6}};
 
 static uint8_t motorSpdLvlRef = 0;
 
-void taskAppMotor() {
-    const int32_t durationTx = 500;
-    uint8_t motorSpdLvl = 0;
+void taskAppMotor(void* pvParameters) {
+    TickType_t duration = 0;
 
-    tim1Set3PhasePwm(APP_3PHASE_PWM_CFG_STOP_FREQ,
-                     APP_3PHASE_PWM_CFG_STOP_DUTY);
     tim1Start3PhasePwm();
-    Port_SetMotorDriverEnable();
 
     for (;;) {
-        if (motorSpdLvl != motorSpdLvlRef) {
-            motorSpdLvl = motorSpdLvlRef;
-            tim1Set3PhasePwm(pwmSetting[motorSpdLvl].frequency,
-                             pwmSetting[motorSpdLvl].duty);
+        if (motorSpdLvlRef == 0) {
+            /* stop motor */
+            Port_SetMotorDriverDisable();
+            vTaskDelay(100);
+            continue;
         }
-        vTaskDelay(durationTx);
+
+        if (motorSpdLvlRef >= mAppMotorSpeedMax) {
+            /* invalid motor speed ref, stop motor */
+            Port_SetMotorDriverDisable();
+            vTaskDelay(100);
+            continue;
+        }
+
+        /* set duration from motor speed ref */
+        tim1Set3PhasePwmCfg(pwmSetting[motorSpdLvlRef].width,
+                            pwmSetting[motorSpdLvlRef].duty);
+        duration = pwmSetting[motorSpdLvlRef].phaseTime;
+
+        /* phase uv:  u: high, v: high, w: high-z */
+        timSet6StepMotorPhaseU();
+        Port_SetMotorDriverEnWU();
+        vTaskDelay(duration / 2);
+        Port_SetMotorDriverEnUV();
+        vTaskDelay(duration / 2);
+        /* phase v:  u: high-z, v: high, w: low */
+        timSet6StepMotorPhaseV();
+        Port_SetMotorDriverEnUV();
+        vTaskDelay(duration / 2);
+        Port_SetMotorDriverEnVW();
+        vTaskDelay(duration / 2);
+        /* phase w:  u: low, v: high-z, w: high */
+        timSet6StepMotorPhaseW();
+        Port_SetMotorDriverEnVW();
+        vTaskDelay(duration / 2);
+        Port_SetMotorDriverEnWU();
+        vTaskDelay(duration / 2);
     }
 }
 
-void taskAppUart() {
-    const int32_t durationTx = 100;
+void taskAppUart(void* pvParameters) {
+    const TickType_t durationTx = 100;
     RxDataType rxData = '\0';
 
     for (;;) {
@@ -82,8 +109,9 @@ void taskAppUart() {
 
             /* update motor speed reference */
             if (rxData == '+') {
-                if (ref < (APP_MOTOR_SPEED_LEVEL_MAX - 1)) {
-                    ref++;
+                ref++;
+                if (ref >= mAppMotorSpeedMax) {
+                    ref--;
                 }
             } else if (rxData == '-') {
                 if (ref > 0) {
@@ -92,11 +120,36 @@ void taskAppUart() {
             } else {
                 /* nop */
             }
+
             motorSpdLvlRef = ref;
 
             /* echo back */
             Usart2_Transmit(rxData);
         }
+        vTaskDelay(durationTx);
+    }
+}
+
+#define adcBemfPhaseU 0
+#define adcBemfPhaseV 1
+#define adcBemfPhaseW 2
+void taskAppAdcBemf(void* pvParameters) {
+    const TickType_t durationTx = 1; /* 1ms */
+    int16_t adcValue = 0;
+    char_t uartTxData[6];
+
+    for (;;) {
+        adcValue = vAdcConvertADC1IN9();
+        /* convert to ascii code */
+        uartTxData[0] = (adcValue % 1000) + '0';
+        uartTxData[1] = (adcValue / 100 % 10) + '0';
+        uartTxData[2] = (adcValue / 10 % 10) + '0';
+        uartTxData[3] = (adcValue % 10) + '0';
+        uartTxData[4] = '\n';
+        uartTxData[5] = '\0';
+        /* tx uart */
+        Usart2_TransmitBytes(uartTxData);
+
         vTaskDelay(durationTx);
     }
 }

@@ -12,7 +12,11 @@ extern uint8 tim1IsCC1IFSet();
 extern uint8 tim1ClearCC1IF();
 
 extern void tim1Start3PhasePwm();
-extern void tim1Set3PhasePwm(uint16 frequency, uint16 duty);
+extern void tim1Set3PhasePwmCfg(uint16 width, uint16 duty);
 extern void tim1Flip3PhasePwm();
+
+extern void timSet6StepMotorPhaseU(void);
+extern void timSet6StepMotorPhaseV(void);
+extern void timSet6StepMotorPhaseW(void);
 
 #endif /* DRIVER_TIMER_H */

@@ -35,9 +35,9 @@ int main() {
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
                 (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppMotor, "Motor", configMINIMAL_STACK_SIZE, (void *)NULL,
-                APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
+                APP_TASK_APRIORITY_HIGH, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,
-                APP_TASK_APRIORITY_UART, (TaskHandle_t *)NULL);
+                APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
 
     /* start FreeRTOS */
     vTaskStartScheduler();
@@ -51,12 +51,12 @@ int main() {
 uint32 tim1IntCnt = 0;
 void IRQ_TIM1_UP_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_UP_Handler() {
-    tim1Flip3PhasePwm();
-    tim1ClearUIF();
+    // tim1Flip3PhasePwm();
+    // tim1ClearUIF();
 }
 void IRQ_TIM1_CC_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_CC_Handler() {
-    tim1Flip3PhasePwm();
+    // tim1Flip3PhasePwm();
     tim1ClearCC1IF();
 }
 

@@ -5,8 +5,9 @@
 #include "Queue.h"
 
 /* app tasks */
-extern void taskAppLedBlink();
-extern void taskAppMotor();
-extern void taskAppUart();
+extern void taskAppLedBlink(void* pvParameters);
+extern void taskAppMotor(void* pvParameters);
+extern void taskAppUart(void* pvParameters);
+extern void taskAppAdcBemf(void* pvParameters);
 
 #endif /* APP_TASK_H */
