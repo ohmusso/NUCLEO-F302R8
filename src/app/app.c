@@ -47,9 +47,9 @@ static const Tim13PhasePwmCfg_t pwmSetting[mAppMotorSpeedMax] = {
     /* 1phase: 48[ms], 60[rpm] */
     {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 12, 48},
     /* 1phase: 48[ms], 120[rpm] */
-    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 6, 24},
+    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 8, 24},
     /* 1phase: 24[ms], 240[rpm] */
-    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 3, 6}};
+    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 4, 6}};
 
 static uint8_t motorSpdLvlRef = 0;
 
@@ -80,9 +80,9 @@ void taskAppMotor(void* pvParameters) {
 
         /* phase uv:  u: high, v: high, w: high-z */
         timSet6StepMotorPhaseU();
-        Port_SetMotorDriverEnWU();
-        vTaskDelay(duration / 2);
         Port_SetMotorDriverEnUV();
+        vTaskDelay(duration / 2);
+        Port_SetMotorDriverEnWU();
         vTaskDelay(duration / 2);
         /* phase v:  u: high-z, v: high, w: low */
         timSet6StepMotorPhaseV();
