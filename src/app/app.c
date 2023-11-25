@@ -28,28 +28,31 @@ void taskAppLedBlink(void* pvParameters) {
 }
 
 typedef struct {
-    uint16 width;
-    uint16 duty;
-    TickType_t phaseTime;
-} Tim13PhasePwmCfg_t;
+    uint16 pwmWidth;
+    uint16 pwmDuty;
+    TickType_t stepTime;
+} SixStepMotorCtrlCfg_t;
+
+#define mAppPwmWitdh \
+    ((uint16)25) /* pwm center aligned mode: width = ARR*2 = 50[us] */
 
 /* Motor spec */
 /* 3Phase u, v, w */
-/* Poles number: 7 */
+/* Poles number: 14 */
 /* 1Phase electrical angle: 17.1[deg] */
-#define mApp3phaseCfgPwmWitdh \
-    ((uint16)25) /* pwm center aligned mode: width = ARR*2 = 50[us] */
 
+/* 6step motor control */
+/* 1step electrical angle: 8.56[deg] */
 #define mAppMotorSpeedMax 4
-static const Tim13PhasePwmCfg_t pwmSetting[mAppMotorSpeedMax] = {
+static const SixStepMotorCtrlCfg_t sixStepCtrlCfg[mAppMotorSpeedMax] = {
     /* stop */
-    {mApp3phaseCfgPwmWitdh, 0, 0},
+    {mAppPwmWitdh, 0, 0},
     /* 1phase: 48[ms], 60[rpm] */
-    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 12, 48},
-    /* 1phase: 48[ms], 120[rpm] */
-    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 8, 24},
-    /* 1phase: 24[ms], 240[rpm] */
-    {mApp3phaseCfgPwmWitdh, mApp3phaseCfgPwmWitdh / 4, 6}};
+    {mAppPwmWitdh, mAppPwmWitdh / 12, 48},
+    /* 1phase: 24[ms], 120[rpm] */
+    {mAppPwmWitdh, mAppPwmWitdh / 8, 24},
+    /* 1phase: 6[ms], 480[rpm] */
+    {mAppPwmWitdh, mAppPwmWitdh / 4, 6}};
 
 static uint8_t motorSpdLvlRef = 0;
 
@@ -74,28 +77,28 @@ void taskAppMotor(void* pvParameters) {
         }
 
         /* set duration from motor speed ref */
-        tim1Set3PhasePwmCfg(pwmSetting[motorSpdLvlRef].width,
-                            pwmSetting[motorSpdLvlRef].duty);
-        duration = pwmSetting[motorSpdLvlRef].phaseTime;
+        tim1Set3PhasePwmCfg(sixStepCtrlCfg[motorSpdLvlRef].pwmWidth,
+                            sixStepCtrlCfg[motorSpdLvlRef].pwmDuty);
+        duration = sixStepCtrlCfg[motorSpdLvlRef].stepTime;
 
         /* phase uv:  u: high, v: high, w: high-z */
         timSet6StepMotorPhaseU();
         Port_SetMotorDriverEnUV();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
         Port_SetMotorDriverEnWU();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
         /* phase v:  u: high-z, v: high, w: low */
         timSet6StepMotorPhaseV();
         Port_SetMotorDriverEnVW();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
         Port_SetMotorDriverEnUV();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
         /* phase w:  u: low, v: high-z, w: high */
         timSet6StepMotorPhaseW();
         Port_SetMotorDriverEnWU();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
         Port_SetMotorDriverEnVW();
-        vTaskDelay(duration / 2);
+        vTaskDelay(duration);
     }
 }
 
