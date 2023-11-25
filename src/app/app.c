@@ -33,7 +33,7 @@ typedef struct {
     TickType_t stepTime;
 } SixStepMotorCtrlCfg_t;
 
-#define mAppPwmWitdh \
+#define mApp3PhasePwmWitdh \
     ((uint16)25) /* pwm center aligned mode: width = ARR*2 = 50[us] */
 
 /* Motor spec */
@@ -46,13 +46,13 @@ typedef struct {
 #define mAppMotorSpeedMax 4
 static const SixStepMotorCtrlCfg_t sixStepCtrlCfg[mAppMotorSpeedMax] = {
     /* stop */
-    {mAppPwmWitdh, 0, 0},
+    {mApp3PhasePwmWitdh, 0, 0},
     /* 1phase: 48[ms], 60[rpm] */
-    {mAppPwmWitdh, mAppPwmWitdh / 12, 48},
+    {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 12, 48},
     /* 1phase: 24[ms], 120[rpm] */
-    {mAppPwmWitdh, mAppPwmWitdh / 8, 24},
+    {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 8, 24},
     /* 1phase: 6[ms], 480[rpm] */
-    {mAppPwmWitdh, mAppPwmWitdh / 4, 6}};
+    {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 4, 6}};
 
 static uint8_t motorSpdLvlRef = 0;
 
