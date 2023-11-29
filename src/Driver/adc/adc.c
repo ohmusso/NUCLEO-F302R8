@@ -26,6 +26,7 @@ typedef struct {
     uint16 reserved_DR;
     uint32 reserved_44[2];
     uint32 JSQR;
+    uint32 reserved_50[4];
     uint32 OFR1;
     uint32 OFR2;
     uint32 OFR3;
@@ -57,6 +58,10 @@ typedef struct {
 #define ADC_ISR_ADRDY_SHIFT (0u)
 #define ADC_ISR_ADRDY_MASK (1u << ADC_ISR_ADRDY_SHIFT)
 
+#define ADC_ISR_EOC_Set (1u)
+#define ADC_ISR_EOC_SHIFT (2u)
+#define ADC_ISR_EOC_MASK (1u << ADC_ISR_EOC_SHIFT)
+
 /* ADCx_CR */
 #define ADC_CR_ADVREGEN_DisEToEn (0u)
 #define ADC_CR_ADVREGEN_Enabled (1u)
@@ -77,7 +82,7 @@ typedef struct {
 #define ADC_CR_ADCALDIF_SHIFT (30u)
 
 #define ADC_CR_ADSTART_Set (1u)
-#define ADC_CR_ADSTART_SHIFT (3u)
+#define ADC_CR_ADSTART_SHIFT (2u)
 #define ADC_CR_ADSTART_MASK (1u << ADC_CR_ADSTART_SHIFT)
 
 #define ADC_CR_ADEN_Disabled (0u)
@@ -86,13 +91,22 @@ typedef struct {
 #define ADC1_CR_ADEN_MASK (1u << ADC_CR_ADEN_SHIFT)
 #define ADC_CR_ADEN_SET_Enabled (1u << ADC_CR_ADEN_SHIFT)
 
+/* ADCx_SMPR */
+#define ADC_SMPR_1_5Clock (0u)  /* 1.5 ADC clock cycles */
+#define ADC_SMPR_19_5Clock (4u) /* 19.5 ADC clock cycles */
+
+#define ADC_SMPR_IN8_SHIFT (24u)
+#define ADC_SMPR_IN8 (ADC_SMPR_19_5Clock << ADC_SMPR_IN8_SHIFT)
+
 /* ADCx_SQR1 */
-#define Init_ADC_SQR_L (1u)
+#define Init_ADC_SQR_L (0u) /* one conversion */
 
 #define ADC_SQR_SQ1_SHIFT (6u)
-#define ADC_SQR_SQ1_IN9 (9u << ADC_SQR_SQ1_SHIFT)
-#define ADC_SQR_SQ1_IN11 (11u << ADC_SQR_SQ1_SHIFT)
-#define ADC_SQR_SQ1_IN15 (15u << ADC_SQR_SQ1_SHIFT)
+#define ADC_SQR_SQ1_IN8 (8u << ADC_SQR_SQ1_SHIFT)
+#define ADC_SQR_SQ1_IN9 (9u << ADC_SQR_SQ1_SHIFT)   /* BEMF1 */
+#define ADC_SQR_SQ1_IN11 (11u << ADC_SQR_SQ1_SHIFT) /* BEMF2 */
+#define ADC_SQR_SQ1_IN15 (15u << ADC_SQR_SQ1_SHIFT) /* BEMF3 */
+#define ADC_SQR_SQ1_IN18 (18u << ADC_SQR_SQ1_SHIFT) /* VREFINT */
 
 /* ADCx_DIFSEL */
 #define ADC1_DIFSEL_Singleend (0u)
@@ -110,6 +124,9 @@ typedef struct {
 #define ADC_CCR_CKMODE_HCLK_Div4 (3u)
 #define ADC_CCR_CKMODE_SHIFT (16u)
 
+#define ADC_CCR_VREFEN_Enable (1u)
+#define ADC_CCR_VREFEN_SHIFT (22u)
+
 /* pointer to register */
 #define stpADC1 ((StADC*)(ADC1_BASE_ADDRESS))
 #define stpADCComm ((StADCCOM*)(ADCCOM_BASE_ADDRESS))
@@ -121,6 +138,11 @@ typedef struct {
 #define mIsConvertiong(regCR)                                     \
     ((((regCR) & ADC_CR_ADSTART_MASK) >> ADC_CR_ADSTART_SHIFT) == \
      ADC_CR_ADSTART_Set)
+
+/* EOC */
+#define mClearEOC(regISR) ((regISR) &= ~ADC_ISR_EOC_MASK)
+#define mIsEOCSet(regISR) \
+    ((((regISR) & ADC_ISR_EOC_MASK) >> ADC_ISR_EOC_SHIFT) == ADC_ISR_EOC_Set)
 
 /* ADRDY */
 #define mClearAdcReady(regISR) ((regISR) &= ~ADC_ISR_ADRDY_MASK)
@@ -153,9 +175,16 @@ typedef struct {
     (((regCR) & (ADC1_CR_ADEN_MASK) >> ADC_CR_ADEN_SHIFT) == \
      ADC_CR_ADEN_Enabled)
 
+/* SMPR */
+#define mSetSamplingRate(regSMPR, regInVal) ((regSMPR) = regInVal)
+
 /* SQR */
 #define mSetSequence(regSQR, regInVal) \
     ((regSQR) = ((regInVal) | Init_ADC_SQR_L))
+
+/* VREFEN */
+#define mEnableVREFEN() \
+    stpADCComm->CCR |= (ADC_CCR_VREFEN_Enable << ADC_CCR_VREFEN_SHIFT)
 
 /* CKMODE */
 #define mSetCKMODE(regVal) stpADCComm->CCR |= ((regVal) << ADC_CCR_CKMODE_SHIFT)
@@ -170,22 +199,24 @@ static uint16 vAdcStartConvertBit12(void);
 void ADC1_Init(void) {
     /* select adc clock  */
     mSetCKMODE(ADC_CCR_CKMODE_HCLK_Div2);
+    // mEnableVREFEN();
 
     /* enable adc voltage regulator if regulator is not enable */
     if (mIsAdcAdvregDisabled(stpADC1->CR) == TRUE) {
         mResetAdcAdvregen(stpADC1->CR);
+        vAdcWait(3000);
         mEnableAdcAdvregen(stpADC1->CR);
         /* wait for regulator start up time */
         /*   clock: HLCK /2 = 8 / 2 = 4[MHz] : 0.25[us] */
-        /*   100tick = 25[us] */
-        vAdcWait(100);
+        /*   100tick = 250[us] */
+        vAdcWait(3000);
     }
 
     /* calibration */
     vAdcStartCalibration(stpADC1);
 
     /* wait for after end of caliblation */
-    vAdcWait(100);
+    vAdcWait(3000);
 
     /* enable adc */
     vAdcEnable(stpADC1);
@@ -230,7 +261,7 @@ static void vAdcEnable(StADC* pRegADC) {
 
 uint16 vAdcConvertADC1IN9(void) {
     /* set sequeence */
-    mSetSequence(stpADC1->SMPR1, ADC_SQR_SQ1_IN9);
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN9);
 
     /* start conversion and return result */
     return vAdcStartConvertBit12();

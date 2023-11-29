@@ -34,6 +34,8 @@ int main() {
     /* create app task*/
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
                 (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
+    xTaskCreate(taskAppAdcBemf, "AdcBemf", configMINIMAL_STACK_SIZE,
+                (void *)NULL, APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppMotor, "Motor", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_HIGH, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,

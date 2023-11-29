@@ -43,15 +43,17 @@ typedef struct {
 
 /* 6step motor control */
 /* 1step electrical angle: 8.56[deg] */
-#define mAppMotorSpeedMax 4
+#define mAppMotorSpeedMax 5
 static const SixStepMotorCtrlCfg_t sixStepCtrlCfg[mAppMotorSpeedMax] = {
     /* stop */
     {mApp3PhasePwmWitdh, 0, 0},
-    /* 1phase: 48[ms], 60[rpm] */
+    /* 1step: 1000[ms], - [rpm] */
+    {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 12, 1000},
+    /* 1step: 48[ms], 30[rpm] */
     {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 12, 48},
-    /* 1phase: 24[ms], 120[rpm] */
+    /* 1step: 24[ms], 60[rpm] */
     {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 8, 24},
-    /* 1phase: 6[ms], 480[rpm] */
+    /* 1step: 6[ms], 240[rpm] */
     {mApp3PhasePwmWitdh, mApp3PhasePwmWitdh / 4, 6}};
 
 static uint8_t motorSpdLvlRef = 0;
@@ -127,7 +129,7 @@ void taskAppUart(void* pvParameters) {
             motorSpdLvlRef = ref;
 
             /* echo back */
-            Usart2_Transmit(rxData);
+            // Usart2_Transmit(rxData);
         }
         vTaskDelay(durationTx);
     }
@@ -137,21 +139,20 @@ void taskAppUart(void* pvParameters) {
 #define adcBemfPhaseV 1
 #define adcBemfPhaseW 2
 void taskAppAdcBemf(void* pvParameters) {
-    const TickType_t durationTx = 1; /* 1ms */
-    int16_t adcValue = 0;
-    char_t uartTxData[6];
+    const TickType_t durationTx = 10; /* 1ms */
+    uint16_t adcValue = 0;
+    const char_t uartTxDataSize = 8;
+    char_t uartTxData[uartTxDataSize];
 
     for (;;) {
         adcValue = vAdcConvertADC1IN9();
         /* convert to ascii code */
-        uartTxData[0] = (adcValue % 1000) + '0';
-        uartTxData[1] = (adcValue / 100 % 10) + '0';
-        uartTxData[2] = (adcValue / 10 % 10) + '0';
-        uartTxData[3] = (adcValue % 10) + '0';
-        uartTxData[4] = '\n';
-        uartTxData[5] = '\0';
+        uartTxData[0] = ((adcValue >> 12) & 0x000F); /* 1000 place of 4 hex */
+        uartTxData[1] = ((adcValue >> 8) & 0x000F);  /* 100 place */
+        uartTxData[2] = ((adcValue >> 4) & 0x000F);  /* 10 place */
+        uartTxData[3] = (adcValue & 0x000F);         /* 1 place */
         /* tx uart */
-        Usart2_TransmitBytes(uartTxData);
+        Usart2_TransmitHexDatas(uartTxData, 4);
 
         vTaskDelay(durationTx);
     }

@@ -104,6 +104,30 @@ void Usart2_TransmitBytes(const char_t* const str) {
     stpUSART2->TDR = '\n';
 }
 
+void Usart2_TransmitHexDatas(const char_t* const str, const char_t len) {
+    int i = 0;
+    char_t c = '0';
+
+    while (i < len) {
+        Uart2_WaitUntilTxComp();
+        if ((str[i] >= 0) && (str[i] <= 9)) {
+            c = str[i] + '0';
+        } else if ((str[i] >= 10) && (str[i] <= 15)) {
+            c = str[i] - 10 + 'A';
+        } else {
+            c = str[i];
+        }
+
+        stpUSART2->TDR = c;
+        i++;
+    }
+
+    Uart2_WaitUntilTxComp();
+    stpUSART2->TDR = '\r';
+    Uart2_WaitUntilTxComp();
+    stpUSART2->TDR = '\n';
+}
+
 /* Return */
 /*  - UartRetFetchData */
 /*  - UartRetNoData */

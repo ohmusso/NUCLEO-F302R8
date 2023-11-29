@@ -7,6 +7,7 @@
 extern void Uart_Init();
 extern void Usart2_Transmit(uint8 value);
 extern void Usart2_TransmitBytes(const char_t* const str);
+extern void Usart2_TransmitHexDatas(const char_t* const str, const char_t len);
 extern UartRetType Uart2_ReadData(RxDataType* data);
 
 /* use in interrupt context */
