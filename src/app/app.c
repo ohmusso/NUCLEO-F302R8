@@ -139,12 +139,13 @@ void taskAppUart(void* pvParameters) {
 #define adcBemfPhaseV 1
 #define adcBemfPhaseW 2
 void taskAppAdcBemf(void* pvParameters) {
-    const TickType_t durationTx = 10; /* 1ms */
+    const TickType_t durationTx = 10; /* 10ms */
     uint16_t adcValue = 0;
     const char_t uartTxDataSize = 8;
     char_t uartTxData[uartTxDataSize];
 
     for (;;) {
+        /* adc start */
         adcValue = vAdcConvertADC1IN9();
         /* convert to ascii code */
         uartTxData[0] = ((adcValue >> 12) & 0x000F); /* 1000 place of 4 hex */
