@@ -29,8 +29,7 @@ set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}objcopy)       # binary convert tool
 ### arm
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mgeneral-regs-only -DSTM32 -DSTM32F3")
 ### gcc
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall -DDEBUG -g3")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall -DDEBUG -g3")
 
 # Linker
 ## linker script file
