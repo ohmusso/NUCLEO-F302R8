@@ -33,21 +33,15 @@ typedef struct {
     (GPIOX_MODER_Type_AltFunc << 18) /* Motor IN2(TIM1 CC2) */
 #define Init_GPIOA_MODER_10 \
     (GPIOX_MODER_Type_AltFunc << 20) /* Motor IN3(TIM1 CC3) */
-#define Init_GPIOA_MODER_13 (GPIOX_MODER_Type_AltFunc << 26) /* DBG: SWDIO */
-#define Init_GPIOA_MODER_14 (GPIOX_MODER_Type_AltFunc << 28) /* DBG: SWCLK */
-#define Init_GPIOA_MODER_15 (GPIOX_MODER_Type_Input << 30)   /* H1 */
+#define Init_GPIOA_MODER_15 (GPIOX_MODER_Type_Input << 30) /* H1 */
 #define Init_GPIOA_MODER                                               \
-    (Init_GPIOA_MODER_15 | Init_GPIOA_MODER_14 | Init_GPIOA_MODER_13 | \
-     Init_GPIOA_MODER_10 | Init_GPIOA_MODER_09 | Init_GPIOA_MODER_08 | \
-     Init_GPIOA_MODER_07 | Init_GPIOA_MODER_03 | Init_GPIOA_MODER_02)
+    (Init_GPIOA_MODER_15 | Init_GPIOA_MODER_10 | Init_GPIOA_MODER_09 | \
+     Init_GPIOA_MODER_08 | Init_GPIOA_MODER_07 | Init_GPIOA_MODER_03 | \
+     Init_GPIOA_MODER_02)
 
 /* GPIOB */
-#define Init_GPIOB_MODER_00 (GPIOX_MODER_Type_Analog << 0) /* BEMF2 */
-#if 0 /* when use swd, then PB3 is not config */
-#define Init_GPIOB_MODER_03 (GPIOX_MODER_Type_Input << 6) /* H2 */
-#else
-#define Init_GPIOB_MODER_03 (0) /* H2 */
-#endif
+#define Init_GPIOB_MODER_00 (GPIOX_MODER_Type_Analog << 0)     /* BEMF2 */
+#define Init_GPIOB_MODER_03 (GPIOX_MODER_Type_Input << 6)      /* H2 */
 #define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* LED */
 #define Init_GPIOB_MODER_10 (GPIOX_MODER_Type_Input << 20)     /* H3 */
 #define Init_GPIOB_MODER (Init_GPIOB_MODER_13 | Init_GPIOB_MODER_00)
@@ -95,11 +89,8 @@ typedef struct {
 #define GPIOA_AFRH_TIM1_CH1 (0x06 << 0)
 #define GPIOA_AFRH_TIM1_CH2 (0x06 << 4)
 #define GPIOA_AFRH_TIM1_CH3 (0x06 << 8)
-#define GPIOA_AFRH_SWDIO (0x00 << 20)
-#define GPIOA_AFRH_SWCLK (0x00 << 24)
-#define Init_GPIOA_AFRH                                          \
-    (GPIOA_AFRH_SWCLK | GPIOA_AFRH_SWDIO | GPIOA_AFRH_TIM1_CH3 | \
-     GPIOA_AFRH_TIM1_CH2 | GPIOA_AFRH_TIM1_CH1)
+#define Init_GPIOA_AFRH \
+    (GPIOA_AFRH_TIM1_CH3 | GPIOA_AFRH_TIM1_CH2 | GPIOA_AFRH_TIM1_CH1)
 
 /* pointer to GPIOX register */
 #define stpGPIOA ((StGPIOX *)(GPIOA_BASE_ADDRESS))
