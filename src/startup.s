@@ -92,7 +92,7 @@ g_pfnVectors:
 	.word	0				/* 007C:  */
 	.word	0				/* 0080:  */
 	.word	0				/* 0084:  */
-	.word	0				/* 0088:  */
+	.word	IRQ_ADC_Handler	/* 0088: ADC1 and ADC2 global interrupt */
 	.word	0				/* 008C:  */
 	.word	0				/* 0090:  */
 	.word	0				/* 0094:  */
