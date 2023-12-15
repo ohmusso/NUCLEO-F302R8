@@ -126,8 +126,8 @@ typedef struct {
 #define ADC_CFGR_RES_SHIFT (3u)
 #define ADC_CFGR_RES_Set_8bit (ADC_CFGR_RES_8bit << ADC_CFGR_RES_SHIFT)
 
-#define ADC_CFGR_SET                      \
-    (ADC_CFGR_EXTEN_Set_HwTrigerFalling | \
+#define ADC_CFGR_SET                     \
+    (ADC_CFGR_EXTEN_Set_HwTrigerRising | \
      ADC_CFGR_EXTSEL_Set_TIM1_TRGO2_event | ADC_CFGR_RES_Set_8bit)
 
 /* ADCx_SMPR */
