@@ -52,7 +52,7 @@ typedef struct {
     uint32 CDR;
 } StADCCOM;
 
-/* ADCx_ISR */
+/* ADCx_ISR: ADC interrupt and status register */
 #define ADC_ISR_ADRDY_clear (0u)
 #define ADC_ISR_ADRDY_Ready (1u)
 #define ADC_ISR_ADRDY_SHIFT (0u)
@@ -61,6 +61,11 @@ typedef struct {
 #define ADC_ISR_EOC_Set (1u)
 #define ADC_ISR_EOC_SHIFT (2u)
 #define ADC_ISR_EOC_MASK (1u << ADC_ISR_EOC_SHIFT)
+
+/* ADCx_IER: ADC interrupt enable register */
+#define ADC_IER_Enable (1u)
+#define ADC_IER_EOC_SHIFT (2u)
+#define ADC_IER_EOC_Enable (ADC_IER_Enable << ADC_IER_EOC_SHIFT)
 
 /* ADCx_CR */
 #define ADC_CR_ADVREGEN_DisEToEn (0u)
@@ -81,6 +86,10 @@ typedef struct {
 #define ADC_CR_ADCALDIF_Differential (1u)
 #define ADC_CR_ADCALDIF_SHIFT (30u)
 
+#define ADC_CR_ADSTP_Set (1u)
+#define ADC_CR_ADSTP_SHIFT (4u)
+#define ADC_CR_ADSTP_MASK (1u << ADC_CR_ADSTP_SHIFT)
+
 #define ADC_CR_ADSTART_Set (1u)
 #define ADC_CR_ADSTART_SHIFT (2u)
 #define ADC_CR_ADSTART_MASK (1u << ADC_CR_ADSTART_SHIFT)
@@ -90,6 +99,36 @@ typedef struct {
 #define ADC_CR_ADEN_SHIFT (0u)
 #define ADC1_CR_ADEN_MASK (1u << ADC_CR_ADEN_SHIFT)
 #define ADC_CR_ADEN_SET_Enabled (1u << ADC_CR_ADEN_SHIFT)
+
+/* ADCx_CFGR */
+#define ADC_CFGR_EXTEN_HwTrigerRising (1u)
+#define ADC_CFGR_EXTEN_HwTrigerFalling (2u)
+#define ADC_CFGR_EXTEN_SHIFT (10u)
+
+#define ADC_CFGR_EXTEN_Set_HwTrigerRising \
+    (ADC_CFGR_EXTEN_HwTrigerRising << ADC_CFGR_EXTEN_SHIFT)
+#define ADC_CFGR_EXTEN_Set_HwTrigerFalling \
+    (ADC_CFGR_EXTEN_HwTrigerFalling << ADC_CFGR_EXTEN_SHIFT)
+
+#define ADC_CFGR_EXTSEL_TIM1_CC1_event (0u)
+#define ADC_CFGR_EXTSEL_TIM1_TRGO_event (9u)
+#define ADC_CFGR_EXTSEL_TIM1_TRGO2_event (10u)
+#define ADC_CFGR_EXTSEL_SHIFT (6u)
+
+#define ADC_CFGR_EXTSEL_Set_TIM1_CC1_Event \
+    (ADC_CFGR_EXTSEL_TIM1_CC1_event << ADC_CFGR_EXTSEL_SHIFT)
+#define ADC_CFGR_EXTSEL_Set_TIM1_TRGO_event \
+    (ADC_CFGR_EXTSEL_TIM1_TRGO_event << ADC_CFGR_EXTSEL_SHIFT)
+#define ADC_CFGR_EXTSEL_Set_TIM1_TRGO2_event \
+    (ADC_CFGR_EXTSEL_TIM1_TRGO2_event << ADC_CFGR_EXTSEL_SHIFT)
+
+#define ADC_CFGR_RES_8bit (2u)
+#define ADC_CFGR_RES_SHIFT (3u)
+#define ADC_CFGR_RES_Set_8bit (ADC_CFGR_RES_8bit << ADC_CFGR_RES_SHIFT)
+
+#define ADC_CFGR_SET                      \
+    (ADC_CFGR_EXTEN_Set_HwTrigerFalling | \
+     ADC_CFGR_EXTSEL_Set_TIM1_TRGO2_event | ADC_CFGR_RES_Set_8bit)
 
 /* ADCx_SMPR */
 #define ADC_SMPR_1_5Clock (0u)  /* 1.5 ADC clock cycles */
@@ -102,10 +141,12 @@ typedef struct {
 #define Init_ADC_SQR_L (0u) /* one conversion */
 
 #define ADC_SQR_SQ1_SHIFT (6u)
+#define ADC_SQR_SQ2_SHIFT (12u)
 #define ADC_SQR_SQ1_IN8 (8u << ADC_SQR_SQ1_SHIFT)
 #define ADC_SQR_SQ1_IN9 (9u << ADC_SQR_SQ1_SHIFT)   /* BEMF1 */
 #define ADC_SQR_SQ1_IN11 (11u << ADC_SQR_SQ1_SHIFT) /* BEMF2 */
 #define ADC_SQR_SQ1_IN15 (15u << ADC_SQR_SQ1_SHIFT) /* BEMF3 */
+#define ADC_SQR_SQ2_IN15 (15u << ADC_SQR_SQ2_SHIFT) /* BEMF3 */
 #define ADC_SQR_SQ1_IN18 (18u << ADC_SQR_SQ1_SHIFT) /* VREFINT */
 
 /* ADCx_DIFSEL */
@@ -135,14 +176,18 @@ typedef struct {
 /* ADSTART */
 #define mStartConversion(regCR) \
     ((regCR) |= (ADC_CR_ADSTART_Set << ADC_CR_ADSTART_SHIFT))
-#define mIsConvertiong(regCR)                                     \
+#define mIsConverting(regCR)                                      \
     ((((regCR) & ADC_CR_ADSTART_MASK) >> ADC_CR_ADSTART_SHIFT) == \
      ADC_CR_ADSTART_Set)
+
+/* ADSTP */
+#define mStopConversion(regCR) \
+    ((regCR) |= (ADC_CR_ADSTP_Set << ADC_CR_ADSTP_SHIFT))
 
 /* EOC */
 #define mClearEOC(regISR) ((regISR) &= ~ADC_ISR_EOC_MASK)
 #define mIsEOCSet(regISR) \
-    ((((regISR) & ADC_ISR_EOC_MASK) >> ADC_ISR_EOC_SHIFT) == ADC_ISR_EOC_Set)
+    ((((regISR) & ADC_ISR_EOC_MASK) >> ADC_ISR_EOC_SHIFT) != 0)
 
 /* ADRDY */
 #define mClearAdcReady(regISR) ((regISR) &= ~ADC_ISR_ADRDY_MASK)
@@ -220,6 +265,12 @@ void ADC1_Init(void) {
 
     /* enable adc */
     vAdcEnable(stpADC1);
+
+    /* set adc hw trigger */
+    stpADC1->CFGR = ADC_CFGR_SET;
+
+    /* set adc intterupt enable */
+    stpADC1->IER = ADC_IER_EOC_Enable;
 }
 
 static void vAdcWait(uint32 time) {
@@ -267,15 +318,39 @@ uint16 vAdcConvertADC1IN9(void) {
     return vAdcStartConvertBit12();
 }
 
+uint16 vAdcRead(void) {
+    /* read result and return */
+    return (stpADC1->DR & ADC1_DR_MASK_12bit);
+}
+
 static uint16 vAdcStartConvertBit12(void) {
     /* start conversion */
     mStartConversion(stpADC1->CR);
 
     /* wait for complete conversoin */
-    while (mIsConvertiong(stpADC1->CR) == TRUE) {
+    while (mIsConverting(stpADC1->CR) == TRUE) {
         /* busy loop */
     }
 
     /* read result and return */
     return (stpADC1->DR & ADC1_DR_MASK_12bit);
+}
+
+void ADC1_StartConv(void) { mStartConversion(stpADC1->CR); }
+
+void ADC1_StopConv(void) { mStopConversion(stpADC1->CR); }
+
+/* phase u */
+void ADC1_SetSequenceBemf1(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN9);
+}
+
+/* phase v */
+void ADC1_SetSequenceBemf2(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN11);
+}
+
+/* phase w */
+void ADC1_SetSequenceBemf3(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN15);
 }

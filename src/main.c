@@ -25,17 +25,17 @@ int main() {
     Syscfg_Init();
     Exti_Init();
     Port_Init();
+    ADC1_Init();
     Timer_Init();
     Uart_Init();
-    ADC1_Init();
 
     Nvic_Init();
 
-    /* create app task*/
+    /* create app task */
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
                 (void *)NULL, APP_TASK_PRIORITY_LOW, (TaskHandle_t *)NULL);
-    xTaskCreate(taskAppAdcBemf, "AdcBemf", configMINIMAL_STACK_SIZE,
-                (void *)NULL, APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
+    // xTaskCreate(taskAppAdcBemf, "AdcBemf", configMINIMAL_STACK_SIZE,
+    //             (void *)NULL, APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppMotor, "Motor", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_HIGH, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,
@@ -50,12 +50,12 @@ int main() {
 }
 
 /* interupt handler */
-uint32 tim1IntCnt = 0;
 void IRQ_TIM1_UP_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_UP_Handler() {
     // tim1Flip3PhasePwm();
     // tim1ClearUIF();
 }
+extern uint16 adcResult;
 void IRQ_TIM1_CC_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_TIM1_CC_Handler() {
     // tim1Flip3PhasePwm();
@@ -70,3 +70,6 @@ void IRQ_UART2_Handler() { Usart2_RxIndication(); }
 
 void IRQ_EXTI15_10_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_EXTI15_10_Handler() { Exti_ClearExti15_10(); }
+
+void IRQ_ADC_Handler() __attribute__((interrupt("IRQ")));
+void IRQ_ADC_Handler() { adcResult = vAdcRead(); }

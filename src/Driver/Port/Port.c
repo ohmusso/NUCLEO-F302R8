@@ -51,12 +51,13 @@ typedef struct {
 /* GPIOC */
 #define Init_GPIOC_MODER_02 (GPIOX_MODER_Type_Analog << 4)     /* Volume */
 #define Init_GPIOC_MODER_03 (GPIOX_MODER_Type_Analog << 6)     /* BEMF1 */
+#define Init_GPIOC_MODER_09 (GPIOX_MODER_Type_GenOutput << 18) /* GPIO_BEMF */
 #define Init_GPIOC_MODER_10 (GPIOX_MODER_Type_GenOutput << 20) /* Motor EN1 */
 #define Init_GPIOC_MODER_11 (GPIOX_MODER_Type_GenOutput << 22) /* Motor EN2 */
 #define Init_GPIOC_MODER_12 (GPIOX_MODER_Type_GenOutput << 24) /* Motor EN3 */
 #define Init_GPIOC_MODER                                               \
     (Init_GPIOC_MODER_12 | Init_GPIOC_MODER_11 | Init_GPIOC_MODER_10 | \
-     Init_GPIOC_MODER_03 | Init_GPIOC_MODER_02)
+     Init_GPIOC_MODER_09 | Init_GPIOC_MODER_03 | Init_GPIOC_MODER_02)
 
 /* OSPEEDR */
 #define GPIOX_OSPEEDR_Type_Low 0x00

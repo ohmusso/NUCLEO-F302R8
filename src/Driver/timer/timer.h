@@ -9,7 +9,7 @@ extern uint16 tim1GetCnt();
 extern uint8 tim1IsUIFSet();
 extern uint8 tim1ClearUIF();
 extern uint8 tim1IsCC1IFSet();
-extern uint8 tim1ClearCC1IF();
+extern void tim1ClearCC1IF(void);
 
 extern void tim1Start3PhasePwm();
 extern void tim1Set3PhasePwmCfg(uint16 width, uint16 duty);
