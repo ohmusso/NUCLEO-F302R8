@@ -4,7 +4,7 @@
 
 typedef struct {
     uint32 CR1;
-    uint32 CR2;
+    uint32 notUsedCR2;
     uint32 notUsedSMCR;
     uint32 DIER;
     uint32 SR;
@@ -26,8 +26,7 @@ typedef struct {
     uint16 notUsedCCR2_H;
     uint16 CCR3;
     uint16 notUsedCCR3_H;
-    uint16 CCR4;
-    uint16 notUsedCCR4_H;
+    uint32 notUsedCCR4;
     uint32 BDTR;
     uint32 DCR;
     uint32 notUsedDMAR;
@@ -60,19 +59,6 @@ typedef struct {
 #define Init_TIM1_CR1 \
     (TIM1_CR1_CKD | TIM1_CR1_ARPE | TIM1_CR1_CMS | TIM1_CR1_DIR | TIM1_CR1_OPM)
 
-/* CR2 */
-/* MMS1: TRGO1: Triger for Slave Timer */
-#define TIM1_CR2_MMS_Update (2u)
-#define TIM1_CR2_MMS_ComparePulse (3u)
-#define TIM1_CR2_MMS_OC1REFC (6u)
-#define TIM1_CR2_MMS_SHIFT (4u)
-#define TIM1_CR2_MMS_Set_OC1REFC (TIM1_CR2_MMS_OC1REFC << TIM1_CR2_MMS_SHIFT)
-/* MMS2: TRGO2: Triger for ADC */
-#define TIM1_CR2_MMS2_ComparePulse (3u)
-#define TIM1_CR2_MMS2_OC1REFC (4u)
-#define TIM1_CR2_MMS2_SHIFT (20u)
-#define TIM1_CR2_MMS2_Set_OC1REFC (TIM1_CR2_MMS2_OC1REFC << TIM1_CR2_MMS2_SHIFT)
-
 /* DIER */
 #define TIM1_DIER_CCXIE_Enable (0x01)
 #define TIM1_DIER_CC1IE (TIM1_DIER_CCXIE_Enable << 1)
@@ -81,8 +67,7 @@ typedef struct {
 #define TIM1_DIER_UIE (TIM1_DIER_UIE_Enable << 0)
 
 // #define Init_TIM1_DIER (TIM1_DIER_UIE_Enable)
-// #define Init_TIM1_DIER (TIM1_DIER_CC1IE)
-#define Init_TIM1_DIER (0)
+#define Init_TIM1_DIER (TIM1_DIER_CC1IE)
 
 /* SR */
 #define TIM1_SR_CCXIF_InterruptNotOcuure (0x00)
@@ -93,9 +78,9 @@ typedef struct {
 #define TIM1_SR_CC1IF_SHIFT (1)
 
 /* EGR */
-#define TIM1_EGR_CCXG_GenarateEvent (1u)
-#define TIM1_EGR_CC1G_SHIFT (1u)
-#define TIM1_EGR_Set_CC1G (TIM1_EGR_CCXG_GenarateEvent << TIM1_EGR_CC1G_SHIFT)
+#define TIM1_EGR_CCXG_GenarateEvent (0x01)
+#define TIM1_EGR_CCX1 (TIM1_EGR_CCXG_GenarateEvent << 1)
+#define Init_TIM1_EGR (TIM1_EGR_CCX1)
 
 /* CCMR1 */
 #define TIM1_CCMRX_CCXS_Output 0x00
@@ -180,7 +165,6 @@ typedef struct {
 /* Clock must initialized before Port initialize */
 void Timer_Init() {
     stpTIM1->CR1 = Init_TIM1_CR1;
-    stpTIM1->CR2 = TIM1_CR2_MMS2_Set_OC1REFC;
     stpTIM1->DIER = Init_TIM1_DIER;
     stpTIM1->CCMR1 = Init_TIM1_CCMR1;
     stpTIM1->CCMR2 = Init_TIM1_CCMR2;
@@ -198,7 +182,7 @@ void Timer_Init() {
 uint16 tim1GetCnt() { return stpTIM1->CNT; }
 
 uint8 tim1IsCC1IFSet() { return mIsTim1CC1IFSet(); }
-void tim1ClearCC1IF(void) { mClearTim1CC1IF(); }
+uint8 tim1ClearCC1IF() { return mClearTim1CC1IF(); }
 
 uint8 tim1IsUIFSet() { return mIsTim1UIFSet(); }
 uint8 tim1ClearUIF() { return mClearTim1UIF(); }
