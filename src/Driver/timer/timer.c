@@ -45,7 +45,7 @@ typedef struct {
 #define TIM1_CR1_ARPE (TIM1_CR1_ARPE_Enable << 7)
 
 #define TIM1_CR1_CMS_CenterModeIntFlagSetWhenDown (0x01)
-#define TIM1_CR1_CMS_CenterModeIntFlagSetWhen (0x02)
+#define TIM1_CR1_CMS_CenterModeIntFlagSetWhenUp (0x02)
 #define TIM1_CR1_CMS (TIM1_CR1_CMS_CenterModeIntFlagSetWhenDown << 5)
 
 #define TIM1_CR1_DIR_Upcounter (0x00)
