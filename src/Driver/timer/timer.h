@@ -6,6 +6,9 @@
 extern void Timer_Init();
 
 extern uint16 tim1GetCnt();
+extern uint32 tim2GetCnt(void);
+extern void tim2clearCnt(void);
+
 extern uint8 tim1IsUIFSet();
 extern uint8 tim1ClearUIF();
 extern uint8 tim1IsCC1IFSet();

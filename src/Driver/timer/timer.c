@@ -1,6 +1,7 @@
 #include "timer.h"
 
-#define TIM1_BASE_ADDRESS 0x40012C00 /* TIM1 */
+#define TIM1_BASE_ADDRESS 0x40012C00
+#define TIM2_BASE_ADDRESS 0x40000000
 
 typedef struct {
     uint32 CR1;
@@ -37,29 +38,61 @@ typedef struct {
     uint32 notUsedCCR6;
 } StTIM1;
 
+typedef struct {
+    uint32 CR1;
+    uint32 CR2;
+    uint32 SMCR;
+    uint32 DIER;
+    uint32 SR;
+    uint32 EGR;
+    uint32 CCMR1;
+    uint32 CCMR2;
+    uint32 CCER;
+    uint32 CNT;
+    uint16 PSC;
+    uint16 notUsedPSC_H;
+    uint32 ARR;
+    uint32 reserved_30;
+    uint32 CCR1;
+    uint32 CCR2;
+    uint32 CCR3;
+    uint32 CCR4;
+    uint32 reserved_44;
+    uint32 DCR;
+    uint32 DMAR;
+} StTIM2;
+
 /* CR1 */
-#define TIM1_CR1_CKD_CkInt 0x00
-#define TIM1_CR1_CKD (TIM1_CR1_CKD_CkInt << 8)
+#define TIM_CR1_CKD_CkInt 0x00
+#define TIM_CR1_CKD (TIM_CR1_CKD_CkInt << 8)
 
-#define TIM1_CR1_ARPE_Enable (0x01)
-#define TIM1_CR1_ARPE (TIM1_CR1_ARPE_Enable << 7)
+#define TIM_CR1_ARPE_Enable (0x01)
+#define TIM_CR1_ARPE (TIM_CR1_ARPE_Enable << 7)
 
-#define TIM1_CR1_CMS_CenterModeIntFlagSetWhenDown (0x01)
-#define TIM1_CR1_CMS_CenterModeIntFlagSetWhenUp (0x02)
-#define TIM1_CR1_CMS (TIM1_CR1_CMS_CenterModeIntFlagSetWhenDown << 5)
+#define TIM_CR1_CMS_EdgeAlignedMode (0x00)
+#define TIM_CR1_CMS_CenterModeIntFlagSetWhenDown (0x01)
+#define TIM_CR1_CMS_CenterModeIntFlagSetWhenUp (0x02)
+#define TIM_CR1_CMS_Set_Edge (TIM_CR1_CMS_EdgeAlignedMode << 5)
+#define TIM_CR1_CMS_Set_CenterDown \
+    (TIM_CR1_CMS_CenterModeIntFlagSetWhenDown << 5)
 
-#define TIM1_CR1_DIR_Upcounter (0x00)
-#define TIM1_CR1_DIR (TIM1_CR1_DIR_Upcounter << 4)
+#define TIM_CR1_DIR_Upcounter (0x00)
+#define TIM_CR1_DIR (TIM_CR1_DIR_Upcounter << 4)
 
-#define TIM1_CR1_OPM_DisableOnePulse (0x00)
-#define TIM1_CR1_OPM (TIM1_CR1_OPM_DisableOnePulse << 3)
+#define TIM_CR1_OPM_DisableOnePulse (0x00)
+#define TIM_CR1_OPM (TIM_CR1_OPM_DisableOnePulse << 3)
 
-#define TIM1_CR1_CEN_CounterDisable (0x00)
-#define TIM1_CR1_CEN_CounterEnable (0x01)
-#define TIM1_CR1_CEN (TIM1_CR1_CEN_CounterEnable << 0)
+#define TIM_CR1_CEN_CounterDisable (0x00)
+#define TIM_CR1_CEN_CounterEnable (0x01)
+#define TIM_CR1_CEN (TIM_CR1_CEN_CounterEnable << 0)
 
-#define Init_TIM1_CR1 \
-    (TIM1_CR1_CKD | TIM1_CR1_ARPE | TIM1_CR1_CMS | TIM1_CR1_DIR | TIM1_CR1_OPM)
+#define Init_TIM1_CR1                                                        \
+    (TIM_CR1_CKD | TIM_CR1_ARPE | TIM_CR1_CMS_Set_CenterDown | TIM_CR1_DIR | \
+     TIM_CR1_OPM)
+
+#define Init_TIM2_CR1                                                  \
+    (TIM_CR1_CKD | TIM_CR1_ARPE | TIM_CR1_CMS_Set_Edge | TIM_CR1_DIR | \
+     TIM_CR1_OPM)
 
 /* CR2 */
 /* MMS1: TRGO1: Trigger for Slave Timer */
@@ -169,6 +202,7 @@ typedef struct {
 
 /* pointer to TIM1 register */
 #define stpTIM1 ((StTIM1*)(TIM1_BASE_ADDRESS))
+#define stpTIM2 ((StTIM2*)(TIM2_BASE_ADDRESS))
 
 /* macro */
 /* SR */
@@ -196,9 +230,14 @@ void Timer_Init() {
     stpTIM1->CCR3 = Init_TIM1_CCR3;
     stpTIM1->CCMR3 = Init_TIM1_CCMR3;
     stpTIM1->CCR5 = Init_TIM1_CCR5;
+
+    stpTIM2->CR1 = Init_TIM2_CR1;
+    stpTIM2->CR1 |= TIM_CR1_CEN; /* free running counter  1tick = 1[us]*/
 }
 
 uint16 tim1GetCnt() { return stpTIM1->CNT; }
+uint32 tim2GetCnt(void) { return stpTIM2->CNT; }
+void tim2clearCnt(void) { stpTIM2->CNT = 0; }
 
 uint8 tim1IsCC1IFSet() { return mIsTim1CC1IFSet(); }
 void tim1ClearCC1IF(void) { mClearTim1CC1IF(); }
@@ -208,7 +247,7 @@ uint8 tim1ClearUIF() { return mClearTim1UIF(); }
 
 void tim1Start3PhasePwm() {
     stpTIM1->BDTR = Init_TIM1_BDTR;
-    stpTIM1->CR1 |= TIM1_CR1_CEN;
+    stpTIM1->CR1 |= TIM_CR1_CEN;
 }
 
 void tim1Set3PhasePwmCfg(uint16 width, uint16 duty) {

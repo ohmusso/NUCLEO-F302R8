@@ -41,8 +41,9 @@ typedef struct {
 #define RCC_APB1ENR_Disabled 0x00
 #define RCC_APB1ENR_Enabled 0x01
 
+#define RCC_APB1ENR_TIM2 (RCC_APB1ENR_Enabled << 0)
 #define RCC_APB1ENR_USERT2 (RCC_APB1ENR_Enabled << 17)
-#define Init_RCC_APB1ENR (RCC_APB1ENR_USERT2)
+#define Init_RCC_APB1ENR (RCC_APB1ENR_USERT2 | RCC_APB1ENR_TIM2)
 
 /* APB2ENR */
 #define RCC_APB2ENR_Disabled 0x00
