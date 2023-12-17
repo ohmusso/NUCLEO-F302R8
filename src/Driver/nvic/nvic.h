@@ -5,5 +5,7 @@
 
 extern void Nvic_Init();
 extern void Nvic_Clear();
+extern void Nvic_SetInterruptGroupPrioriySubGroupOnly(void);
+extern void Nvic_InitInterruptPrioriy(uint8 priority);
 
 #endif /* DRIVER_NVIC_H */

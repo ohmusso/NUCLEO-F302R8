@@ -20,6 +20,8 @@
 #define APP_TASK_APRIORITY_HIGH (tskIDLE_PRIORITY + 3)
 #define APP_TASK_APRIORITY_UART (tskIDLE_PRIORITY + 4)
 
+static TaskHandle_t xTaskHandleAppMotor = 0;
+
 int main() {
     Clock_Init();
     Syscfg_Init();
@@ -30,6 +32,8 @@ int main() {
     Uart_Init();
 
     Nvic_Init();
+    Nvic_SetInterruptGroupPrioriySubGroupOnly();
+    Nvic_InitInterruptPrioriy(configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
 
     /* create app task */
     xTaskCreate(taskAppLedBlink, "LedBlink", configMINIMAL_STACK_SIZE,
@@ -37,7 +41,7 @@ int main() {
     // xTaskCreate(taskAppAdcBemf, "AdcBemf", configMINIMAL_STACK_SIZE,
     //             (void *)NULL, APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
     xTaskCreate(taskAppMotor, "Motor", configMINIMAL_STACK_SIZE, (void *)NULL,
-                APP_TASK_APRIORITY_HIGH, (TaskHandle_t *)NULL);
+                APP_TASK_APRIORITY_HIGH, &xTaskHandleAppMotor);
     xTaskCreate(taskAppUart, "Uart", configMINIMAL_STACK_SIZE, (void *)NULL,
                 APP_TASK_APRIORITY_MID, (TaskHandle_t *)NULL);
 
@@ -72,4 +76,14 @@ void IRQ_EXTI15_10_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_EXTI15_10_Handler() { Exti_ClearExti15_10(); }
 
 void IRQ_ADC_Handler() __attribute__((interrupt("IRQ")));
-void IRQ_ADC_Handler() { adcResult = vAdcRead(); }
+void IRQ_ADC_Handler() {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    adcResult = vAdcRead();
+    if (adcResult > 50) {
+        ADC1_StopConv();
+        xTaskNotifyFromISR(xTaskHandleAppMotor, 0, eIncrement,
+                           &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}

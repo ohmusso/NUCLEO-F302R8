@@ -81,9 +81,8 @@ void taskAppMotor(void* pvParameters) {
         Port_SetMotorDriverEnUV();
         ADC1_SetSequenceBemf3();
         ADC1_StartConv();
-        vTaskDelay(duration);
+        xTaskNotifyWait(0, 0, (uint32_t*)NULL, portMAX_DELAY);
         /* phase uw:  u: high, v: high-z, w: low */
-        ADC1_StopConv();
         adcResult = 0;
         Port_SetMotorDriverDisable();
         vTaskDelay(1000);
