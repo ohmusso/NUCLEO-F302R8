@@ -75,15 +75,16 @@ void IRQ_UART2_Handler() { Usart2_RxIndication(); }
 void IRQ_EXTI15_10_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_EXTI15_10_Handler() { Exti_ClearExti15_10(); }
 
+extern uint16_t bemfThreshold;
 void IRQ_ADC_Handler() __attribute__((interrupt("IRQ")));
 void IRQ_ADC_Handler() {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     adcResult = vAdcRead();
-    if (adcResult > 50) {
+    if (adcResult > bemfThreshold) {
         ADC1_StopConv();
-        xTaskNotifyFromISR(xTaskHandleAppMotor, 0, eIncrement,
-                           &xHigherPriorityTaskWoken);
+        xTaskNotifyFromISR(xTaskHandleAppMotor, (uint32_t)adcResult,
+                           eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }

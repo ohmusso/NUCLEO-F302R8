@@ -236,6 +236,7 @@ void Timer_Init() {
 }
 
 uint16 tim1GetCnt() { return stpTIM1->CNT; }
+/* 1tick = 1/8MHz = 0.125[us] */
 uint32 tim2GetCnt(void) { return stpTIM2->CNT; }
 void tim2clearCnt(void) { stpTIM2->CNT = 0; }
 

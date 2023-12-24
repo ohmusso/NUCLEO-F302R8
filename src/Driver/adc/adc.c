@@ -336,21 +336,31 @@ static uint16 vAdcStartConvertBit12(void) {
     return (stpADC1->DR & ADC1_DR_MASK_12bit);
 }
 
-void ADC1_StartConv(void) { mStartConversion(stpADC1->CR); }
+void ADC1_StartConvBemf1(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN9);
+    mStartConversion(stpADC1->CR);
+}
+
+void ADC1_StartConvBemf2(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN11);
+    mStartConversion(stpADC1->CR);
+}
+
+void ADC1_StartConvBemf3(void) {
+    mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN15);
+    mStartConversion(stpADC1->CR);
+}
 
 void ADC1_StopConv(void) { mStopConversion(stpADC1->CR); }
 
-/* phase u */
 void ADC1_SetSequenceBemf1(void) {
     mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN9);
 }
 
-/* phase v */
 void ADC1_SetSequenceBemf2(void) {
     mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN11);
 }
 
-/* phase w */
 void ADC1_SetSequenceBemf3(void) {
     mSetSequence(stpADC1->SQR1, ADC_SQR_SQ1_IN15);
 }
