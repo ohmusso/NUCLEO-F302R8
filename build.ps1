@@ -12,6 +12,10 @@ cmake --build build
 Set-Alias objcopy C:\arm-none-eabi\bin\arm-none-eabi-objcopy.exe
 objcopy -O binary ./build/sample.elf ./build/sample.bin
 
+## バイナリダンプ elf
+Set-Alias objdump C:\arm-none-eabi\bin\arm-none-eabi-objdump.exe
+objdump -d -t .\build\sample.elf > .\build\elfdump.txt
+
 # その他コマンド
 ## 書き込み
 ### Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
@@ -20,5 +24,4 @@ objcopy -O binary ./build/sample.elf ./build/sample.bin
 ### gdb ./build/sample.elf
 ## バイナリダンプ
 ### Set-Alias objdump C:\arm-none-eabi\bin\arm-none-eabi-objdump.exe
-### elfをダンプする: objdump -d .\build\sample.elf
 ### binをダンプする: objdump -D -b binary -m arm -M force-thumb ./build/sample.bin

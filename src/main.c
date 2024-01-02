@@ -20,8 +20,6 @@
 #define APP_TASK_APRIORITY_HIGH (tskIDLE_PRIORITY + 3)
 #define APP_TASK_APRIORITY_UART (tskIDLE_PRIORITY + 4)
 
-static TaskHandle_t xTaskHandleAppMotor = 0;
-
 int main() {
     Clock_Init();
     Syscfg_Init();
@@ -77,14 +75,4 @@ void IRQ_EXTI15_10_Handler() { Exti_ClearExti15_10(); }
 
 extern uint16_t bemfThreshold;
 void IRQ_ADC_Handler() __attribute__((interrupt("IRQ")));
-void IRQ_ADC_Handler() {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-    adcResult = vAdcRead();
-    if (adcResult > bemfThreshold) {
-        ADC1_StopConv();
-        xTaskNotifyFromISR(xTaskHandleAppMotor, (uint32_t)adcResult,
-                           eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
+void IRQ_ADC_Handler() { taskAppIsrHandlerAdc(); }

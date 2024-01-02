@@ -6,7 +6,9 @@
         "uart.h": "c",
         "platform_types.h": "c",
         "app_tasks.h": "c",
-        "syscfg.h": "c"
+        "syscfg.h": "c",
+        "task.h": "c",
+        "port.h": "c"
     },
     "editor.formatOnType": true,
     "editor.formatOnSave": true,

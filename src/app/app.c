@@ -16,6 +16,7 @@
 static void motor6stepControll(void);
 
 int32_t systickCount = 0; /* unit: 1ms */
+TaskHandle_t xTaskHandleAppMotor = 0;
 
 /* app tasks */
 void taskAppLedBlink(void* pvParameters) {
@@ -31,15 +32,14 @@ void taskAppLedBlink(void* pvParameters) {
 
 typedef struct {
     uint16_t pwmWidth;
-    int32_t acceptErrorStepTime;
-    uint16_t bemfThresh;
     uint32_t stepTime;
+    int32_t acceptErrorStepTime;
 } SixStepMotorCtrlCfg_t;
 
 #define mApp3PhasePwmWitdh \
     ((uint16_t)25) /* pwm center aligned mode: width = ARR*2 = 50[us] */
 #define mApp3PhasePwmMaxDuty ((uint16_t)20)
-#define mApp3PhasePwmMinDuty ((uint16_t)2)
+#define mApp3PhasePwmMinDuty ((uint16_t)3)
 
 /* Motor spec */
 /* 3Phase u, v, w */
@@ -54,13 +54,13 @@ static const SixStepMotorCtrlCfg_t sixStepCtrlCfg[mAppMotorSpeedMax] = {
     /* stop */
     {mApp3PhasePwmWitdh, 0, 0},
     /* 1step: 5[ms], xx [rpm] */
-    {mApp3PhasePwmWitdh, 500, 20, 1000},
+    {mApp3PhasePwmWitdh, 1000, 100},
     /* 1step: 1[ms], xx[rpm] */
-    {mApp3PhasePwmWitdh, 50, 25, 800},
+    {mApp3PhasePwmWitdh, 800, 50},
     /* 1step: 500[us], xx[rpm] */
-    {mApp3PhasePwmWitdh, 50, 30, 500},
+    {mApp3PhasePwmWitdh, 500, 50},
     /* 1step: 250[us], xx[rpm] */
-    {mApp3PhasePwmWitdh, 50, 50, 250}};
+    {mApp3PhasePwmWitdh, 250, 50}};
 
 static uint8_t motorSpdLvlRef = 0;
 void taskAppMotor(void* pvParameters) {
@@ -78,7 +78,6 @@ void taskAppMotor(void* pvParameters) {
     }
 }
 
-#define enterClearNotifiedVal ((uint32_t)0xFFFFFFFF)
 uint16_t adcResult = 0;
 uint16_t bemfThreshold;
 static uint32_t bemfValStep1 = 0;
@@ -94,26 +93,35 @@ static int32_t stepTime;
 static int32_t stepTimeAvg;
 static int32_t errStepTime;
 static void motor6stepControll(void) {
-    const TickType_t initialWait = 5; /* 10[ms] */
+    const TickType_t forceCtrlWait = 5; /* 5[ms] */
     /* feedback controll */
-    const int32_t ctrlCycle = 50;
+    const uint32_t enterClearNotifiedVal = 0xFFFFFFFF;
+    const int32_t ctrlCycle = 10;
+    const int32_t ctrlSyncCycle = 50;
+    const uint8_t motorCtrlStateOK = 0;
+    const uint8_t motorCtrlStateDutyChangeCnt = 30;
+    const uint16_t bemfThresholdInit = 0;
+    const uint16_t bemfThresholdMax = 100;
+    const uint16_t bemfThresholdMin = 5;
     int32_t cycleCnt = 0;
+    int32_t cycleSyncCnt = 0;
     int32_t refStepTime = 0;
     int32_t stepTimeSum = 0;
     uint8_t motorSpdLvl = 0;
+    uint8_t motorCtrlState = motorCtrlStateOK;
 
     cycleCnt = 0;
     stepTime = 0;
     errStepTime = 0;
     pwmWidth = sixStepCtrlCfg[mAppMotorStop].pwmWidth;
     pwmDuty = mApp3PhasePwmMinDuty;
+    bemfThreshold = bemfThresholdInit;
 
     for (;;) {
         if (motorSpdLvlRef == 0) {
             break;
         }
         motorSpdLvl = motorSpdLvlRef;
-        bemfThreshold = sixStepCtrlCfg[motorSpdLvl].bemfThresh;
         refStepTime = (int32_t)sixStepCtrlCfg[motorSpdLvl].stepTime;
 
         /* set pwm */
@@ -128,57 +136,79 @@ static void motor6stepControll(void) {
         Port_SetMotorDriverEnUV();
         ADC1_StartConvBemf3();
         xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep1,
-                        initialWait); /* clear notified value */
-        ADC1_StopConv();
+                        forceCtrlWait); /* clear notified value */
         /* phase uw:  u: high, v: high-z, w: low */
         motorStep = 2;
         Port_SetMotorDriverEnWU();
         ADC1_StartConvBemf2();
-        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep2, initialWait);
-        ADC1_StopConv();
+        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep2, forceCtrlWait);
         /* phase vw:  u: high-z, v: high, w: low */
         motorStep = 3;
         timSet6StepMotorPhaseV();
         Port_SetMotorDriverEnVW();
         ADC1_StartConvBemf1();
-        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep3, initialWait);
-        ADC1_StopConv();
+        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep3, forceCtrlWait);
         /* phase vu:  u: low, v: high, w: high-z */
         motorStep = 4;
         Port_SetMotorDriverEnUV();
         ADC1_StartConvBemf3();
-        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep4, initialWait);
-        ADC1_StopConv();
+        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep4, forceCtrlWait);
         /* phase wu:  u: low, v: high-z, w: high */
         motorStep = 5;
         timSet6StepMotorPhaseW();
         Port_SetMotorDriverEnWU();
         ADC1_StartConvBemf2();
-        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep5, initialWait);
-        ADC1_StopConv();
+        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep5, forceCtrlWait);
         /* phase wv:  u: high-z, v: low, w: high */
         motorStep = 6;
         Port_SetMotorDriverEnVW();
         ADC1_StartConvBemf1();
-        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep6, initialWait);
-        ADC1_StopConv();
+        xTaskNotifyWait(enterClearNotifiedVal, 0, &bemfValStep6, forceCtrlWait);
         /* 6step end */
         stepTime = tim2GetCnt() / 8; /* 0.125us => 1us */
         stepTime = stepTime / 6;     /* 6step time => avg 1step time*/
-                                     /* calc controll value */
+
         /* speed controll */
         cycleCnt++;
         stepTimeSum += stepTime;
         if (cycleCnt >= ctrlCycle) {
             stepTimeAvg = stepTimeSum / cycleCnt;
             errStepTime = stepTimeAvg - refStepTime;
-            if (errStepTime > sixStepCtrlCfg[motorSpdLvl].acceptErrorStepTime) {
-                pwmDuty++;
-            } else if (errStepTime <
-                       -(sixStepCtrlCfg[motorSpdLvl].acceptErrorStepTime)) {
-                pwmDuty--;
+            if (cycleSyncCnt <= ctrlSyncCycle) {
+                cycleSyncCnt++;
             } else {
-                /* nop */
+                if (motorCtrlState <= motorCtrlStateDutyChangeCnt) {
+                    if (errStepTime >
+                        sixStepCtrlCfg[motorSpdLvl].acceptErrorStepTime) {
+                        if (bemfThreshold < bemfThresholdMax) {
+                            bemfThreshold++;
+                        }
+                        motorCtrlState++;
+                    } else if (errStepTime < -(sixStepCtrlCfg[motorSpdLvl]
+                                                   .acceptErrorStepTime)) {
+                        if (bemfThreshold > bemfThresholdMin) {
+                            bemfThreshold--;
+                        }
+                        motorCtrlState++;
+                    } else {
+                        /* speed is approximately same */
+                        motorCtrlState = motorCtrlStateOK;
+                    }
+                } else if (motorCtrlState >= motorCtrlStateDutyChangeCnt) {
+                    if (errStepTime >
+                        sixStepCtrlCfg[motorSpdLvl].acceptErrorStepTime) {
+                        pwmDuty++;
+                        motorCtrlState = motorCtrlStateOK;
+                        cycleSyncCnt = 0;
+                    } else if (errStepTime < -(sixStepCtrlCfg[motorSpdLvl]
+                                                   .acceptErrorStepTime)) {
+                        pwmDuty--;
+                        motorCtrlState = motorCtrlStateOK;
+                        cycleSyncCnt = 0;
+                    } else {
+                        motorCtrlState = motorCtrlStateOK;
+                    }
+                }
             }
             /* reset */
             cycleCnt = 0;
@@ -193,6 +223,18 @@ static void motor6stepControll(void) {
         } else {
             /* nop */
         }
+    }
+}
+
+void taskAppIsrHandlerAdc(void) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    adcResult = vAdcRead();
+    if (adcResult > bemfThreshold) {
+        ADC1_StopConv();
+        xTaskNotifyFromISR(xTaskHandleAppMotor, (uint32_t)adcResult,
+                           eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
 
