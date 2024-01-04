@@ -67,7 +67,8 @@ void taskAppMotor(void* pvParameters) {
     tim1Start3PhasePwm();
 
     for (;;) {
-        if ((motorSpdLvlRef == 0) || (motorSpdLvlRef >= mAppMotorSpeedMax)) {
+        if ((motorSpdLvlRef == mAppMotorStop) ||
+            (motorSpdLvlRef >= mAppMotorSpeedMax)) {
             /* stop motor */
             Port_SetMotorDriverDisable();
             vTaskDelay(100);
@@ -88,7 +89,7 @@ static int32_t stepTime;
 static int32_t stepTimeAvg;
 static int32_t errStepTime;
 static void motor6stepControll(void) {
-    const TickType_t forceCtrlWait = 5; /* 5[ms] */
+    const TickType_t forceCtrlWait = 10; /* 10[ms] */
     /* feedback controll */
     const uint32_t enterClearNotifiedVal = 0xFFFFFFFF;
     const int32_t ctrlCycle = 10;
@@ -113,9 +114,11 @@ static void motor6stepControll(void) {
     bemfThreshold = bemfThresholdInit;
 
     for (;;) {
-        if (motorSpdLvlRef == 0) {
+        if ((motorSpdLvlRef == mAppMotorStop) ||
+            (motorSpdLvlRef >= mAppMotorSpeedMax)) {
             break;
         }
+
         motorSpdLvl = motorSpdLvlRef;
         refStepTime = (int32_t)sixStepCtrlCfg[motorSpdLvl].stepTime;
 
@@ -171,6 +174,7 @@ static void motor6stepControll(void) {
             errStepTime = stepTimeAvg - refStepTime;
             if (cycleSyncCnt <= ctrlSyncCycle) {
                 cycleSyncCnt++;
+                motorCtrlState = motorCtrlStateOK;
             } else {
                 if (motorCtrlState <= motorCtrlStateDutyChangeCnt) {
                     if (errStepTime >
@@ -218,9 +222,11 @@ static void motor6stepControll(void) {
             /* nop */
         }
 
-        /* reset bemfThreshold when not detect bemf */
-        if (bemfVal < bemfThresholdMin) {
-            bemfThreshold = bemfThresholdMin;
+        /* reset when not detect bemf */
+        if (bemfVal == 0) {
+            pwmDuty = mApp3PhasePwmMinDuty;
+            bemfThreshold = bemfThresholdInit;
+            cycleSyncCnt = 0;
         }
     }
 }
