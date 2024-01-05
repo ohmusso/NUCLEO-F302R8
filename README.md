@@ -1,6 +1,6 @@
-# NUCLEO-F302R8 Blinking
+# NUCLEO-F302R8 BLDC 6Step
 
-Try to blink LED on the board.
+<https://youtu.be/A2dFJH2sC58?si=vFs5gLx9M5gjAiTb>
 
 ## Board
 
@@ -27,7 +27,7 @@ Connect board and PC.
 
 ex) elecom: U2C-MF10BK
 
-## Enviroment
+## Development enviroment
 
 ### OS
 
@@ -65,7 +65,7 @@ Execute in powershell.
 ./build.ps1
 ```
 
-sample.bin will be created at build directory.
+sample.bin will be created at build directory and reprogramming.
 
 ## Reprogramming
 
@@ -79,27 +79,16 @@ sample.bin will be created at build directory.
 
 ### Binary Drag and Drop
 
+※ This step can be skipped
+
 ![Drag and Drop](/images/image-2023-09-09-DraAndDrop.png)
 
 LD2 will be blinking.
 
 ### copy binary to usb drive
 
+※ this step is included in build.ps1
+
 ``` powershell
 Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
-```
-
-## If use vscode
-
-Add include path for lint tool.
-
-/.vscode/c_cpp_properties.json
-
-```json
-    "configurations": [
-        {
-            "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/build/**"
-            ],            
 ```
