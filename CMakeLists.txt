@@ -9,6 +9,11 @@ set(FREERTOS_HEAP "1" CACHE STRING "FreeRTOS heap model number. 1 .. 5. Or absol
 include_directories("${FREERTOS_CONFIG_FILE_DIRECTORY}")
 add_subdirectory(lib/freertos)
 
+# FreeRTOS Plus TCP/IP
+set(FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACHE STRING "Absolute path to the directory with FreeRTOSIPConfig.h")
+include_directories("${FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY}")
+add_subdirectory(lib/FreeRTOS-Plus-TCP)
+
 # user code
 
 ## common user includes
@@ -23,7 +28,7 @@ add_subdirectory(src/app)
 
 # bios and exe file
 add_executable(sample ./src/startup.s ./src/main.c)
-target_link_libraries(sample freertos_kernel driver app)
+target_link_libraries(sample freertos_kernel freertos_plus_tcpip driver app)
 
 # GoogleTest requires at least C++14
 #set(CMAKE_CXX_STANDARD 14)

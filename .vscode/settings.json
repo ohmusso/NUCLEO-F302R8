@@ -8,7 +8,12 @@
         "app_tasks.h": "c",
         "syscfg.h": "c",
         "task.h": "c",
-        "port.h": "c"
+        "port.h": "c",
+        "list.h": "c",
+        "freertos_ip.h": "c",
+        "iptracemacrodefaults.h": "c",
+        "freertos_ip_utils.h": "c",
+        "freertosipconfig.h": "c"
     },
     "editor.formatOnType": true,
     "editor.formatOnSave": true,

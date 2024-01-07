@@ -7,7 +7,9 @@
                 "${workspaceFolder}/",
                 "${workspaceFolder}/src/**",
                 "${workspaceFolder}/lib/freertos/include/**",
-                "${workspaceFolder}/lib/freertos/portable/GCC/ARM_CM4F/**"
+                "${workspaceFolder}/lib/freertos/portable/GCC/ARM_CM4F/**",
+                "${workspaceFolder}/lib/FreeRTOS-Plus-TCP/include/**",
+                "${workspaceFolder}/lib/FreeRTOS-Plus-TCP/portable/Compiler/GCC/**"
             ],
             "defines": [
                 "_DEBUG",
