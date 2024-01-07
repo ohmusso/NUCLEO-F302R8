@@ -1,6 +1,6 @@
 # NUCLEO-F302R8 BLDC 6Step
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/A2dFJH2sC58?si=GxkFvOtkD9a5N7TP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<https://youtu.be/A2dFJH2sC58?si=vFs5gLx9M5gjAiTb>
 
 ## Board
 
