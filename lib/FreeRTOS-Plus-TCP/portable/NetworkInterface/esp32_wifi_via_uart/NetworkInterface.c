@@ -1,5 +1,5 @@
 /*
- * FreeRTOS+TCP V3.1.0
+ * FreeRTOS+TCP <DEVELOPMENT BRANCH>
  * Copyright (C) 2022 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * SPDX-License-Identifier: MIT
@@ -37,6 +37,7 @@
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
+#include "list.h"
 
 /* FreeRTOS+TCP includes. */
 #include "FreeRTOS_IP.h"
@@ -68,7 +69,7 @@ void vNetworkInterfaceAllocateRAMToBuffers( NetworkBufferDescriptor_t pxNetworkB
     /* FIX ME. */
 }
 
-BaseType_t xGetPhyLinkStatus( void )
+BaseType_t xGetPhyLinkStatus( NetworkInterface_t * pxInterface )
 {
     /* FIX ME. */
     return pdFALSE;

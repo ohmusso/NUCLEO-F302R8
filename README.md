@@ -1,31 +1,29 @@
-# NUCLEO-F302R8 BLDC 6Step
-
-<https://youtu.be/A2dFJH2sC58?si=vFs5gLx9M5gjAiTb>
+# NUCLEO-F302R8 wifi with ESP32 WROOM
 
 ## Board
+
+### NUCLEO-F302R8
+
+main board.
 
 <https://www.st.com/ja/evaluation-tools/nucleo-f302r8.html>
 
 * CPU: Arm Cortex-M4. Single core.
 * Internal Clock: 8MHz
 
-### X-NUCLEO-IHM07M1
-
-NUCLEO board extension of motor driver.
-
-<https://www.st.com/ja/ecosystems/x-nucleo-ihm07m1.html>
-
-#### L6230
-
-Motor driver.
-
-<https://www.st.com/en/motor-drivers/l6230.html?rt=um&id=UM1943>
-
-### USB Cable mini B
+#### USB Cable mini B
 
 Connect board and PC.
 
 ex) elecom: U2C-MF10BK
+
+### ESP32 WROOM
+
+sub board to use wifi.
+
+## FreeRTOS TCP
+
+<https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/releases/tag/V4.0.0>
 
 ## Development enviroment
 

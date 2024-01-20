@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.14)
 
 add_library(freertos_plus_tcpip_port STATIC
     ./NetworkInterface/esp32_wifi_via_uart/NetworkInterface.c
+    ./BufferManagement/BufferAllocation_1.c
 )
 
 target_include_directories(freertos_plus_tcpip_port PUBLIC

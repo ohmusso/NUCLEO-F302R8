@@ -7,5 +7,6 @@
 #define ipconfigUSE_IPv6 1
 #define ipconfigUSE_TCP 0
 #define ipconfigUSE_TCP_WIN 0
+#define ipconfigUSE_DNS 0
 
 #endif /* FREERTOS_IP_CONFIG_H */
