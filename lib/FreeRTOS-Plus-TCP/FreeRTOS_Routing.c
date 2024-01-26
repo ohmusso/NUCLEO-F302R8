@@ -1493,7 +1493,7 @@ const char * pcEndpointName( const NetworkEndPoint_t * pxEndPoint,
         /* MISRA Ref 21.6.1 [snprintf and logging] */
         /* More details at: https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/blob/main/MISRA.md#rule-216 */
         /* coverity[misra_c_2012_rule_21_6_violation] */
-        ( void ) snprintf( pcBuffer, uxSize, "NULL" );
+        // ( void ) snprintf( pcBuffer, uxSize, "NULL" );
     }
     else
     {
@@ -1522,7 +1522,7 @@ const char * pcEndpointName( const NetworkEndPoint_t * pxEndPoint,
                 /* MISRA Ref 21.6.1 [snprintf and logging] */
                 /* More details at: https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/blob/main/MISRA.md#rule-216 */
                 /* coverity[misra_c_2012_rule_21_6_violation] */
-                ( void ) snprintf( pcBuffer, uxSize, "NULL" );
+                // ( void ) snprintf( pcBuffer, uxSize, "NULL" );
                 break;
         }
     }

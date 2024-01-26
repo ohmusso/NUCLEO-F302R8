@@ -1548,7 +1548,7 @@ const char * FreeRTOS_strerror_r( BaseType_t xErrnum,
             /* MISRA Ref 21.6.1 [snprintf and logging] */
             /* More details at: https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/blob/main/MISRA.md#rule-216 */
             /* coverity[misra_c_2012_rule_21_6_violation] */
-            ( void ) snprintf( pcBuffer, uxLength, "Errno 0x%lx", xErrnum );
+            // ( void ) snprintf( pcBuffer, uxLength, "Errno 0x%lx", xErrnum );
             pcName = NULL;
             break;
     }
@@ -1558,7 +1558,7 @@ const char * FreeRTOS_strerror_r( BaseType_t xErrnum,
         /* MISRA Ref 21.6.1 [snprintf and logging] */
         /* More details at: https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/blob/main/MISRA.md#rule-216 */
         /* coverity[misra_c_2012_rule_21_6_violation] */
-        ( void ) snprintf( pcBuffer, uxLength, "%s", pcName );
+        // ( void ) snprintf( pcBuffer, uxLength, "%s", pcName );
     }
 
     if( uxLength > 0U )
