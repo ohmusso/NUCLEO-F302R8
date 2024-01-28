@@ -29,7 +29,7 @@ set(CMAKE_OBJCOPY ${TOOLCHAIN_PREFIX}objcopy)       # binary convert tool
 ### arm
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -mgeneral-regs-only -DSTM32 -DSTM32F3")
 ### gcc
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -Wall -DDEBUG -g3")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -Wall -DDEBUG -g3")
 
 # Linker
 ## linker script file
@@ -38,7 +38,7 @@ set(LINKER_FILE ${CMAKE_CURRENT_LIST_DIR}/stm32f3.ld)
 #### if use standard library
 ##### -nostdlib: FreeRTOS use memset and memcpy. don't use this option 
 ##### -Wl,--gc-sections
-set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T\"${LINKER_FILE}\" -Wl,-Map=out.map -Wl,--gc-sections")
+set(CMAKE_EXE_LINKER_FLAGS "-mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T\"${LINKER_FILE}\" -Wl,-Map=out.map,--cref -Wl,--gc-sections")
 ## linker Executable
 set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINKER} <LINK_FLAGS>  -o <TARGET>.elf <OBJECTS> <LINK_LIBRARIES>")
 

@@ -235,11 +235,12 @@ typedef struct {
 #define mSetCKMODE(regVal) stpADCComm->CCR |= ((regVal) << ADC_CCR_CKMODE_SHIFT)
 
 /* prototype declaration */
-static void vAdcStartCalibration(StADC* pReg);
+static void vAdcStartCalibration(volatile StADC* pReg);
 static void vAdcWait(uint32 time);
-static void vAdcEnable(StADC* pReg);
+static void vAdcEnable(volatile StADC* pReg);
 static uint16 vAdcStartConvertBit12(void);
 
+extern void Port_Write(uint8 value);
 /* function definition */
 void ADC1_Init(void) {
     /* select adc clock  */
@@ -279,7 +280,7 @@ static void vAdcWait(uint32 time) {
     }
 }
 
-static void vAdcStartCalibration(StADC* pRegADC) {
+static void vAdcStartCalibration(volatile StADC* pRegADC) {
     /* check adc disabled */
     if (mIsAdcEnabled(pRegADC->CR) == TRUE) {
         return; /* adc aleady enable */
@@ -292,12 +293,14 @@ static void vAdcStartCalibration(StADC* pRegADC) {
     mAdcStartCalibration(pRegADC->CR);
 
     /* Wait for end of calibration */
+    Port_Write(1);
     while (mIsAdcCalibrationEnd(pRegADC->CR) != TRUE) {
         /* busy loop */
     }
+    Port_Write(0);
 }
 
-static void vAdcEnable(StADC* pRegADC) {
+static void vAdcEnable(volatile StADC* pRegADC) {
     /* set ADEN */
     mEnableAdc(pRegADC->CR);
 
