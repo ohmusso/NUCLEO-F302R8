@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // extention: cortex-debug
+            // https://github.com/Marus/cortex-debug/blob/master/debug_attributes.md
+            "name": "Cortex Debug",
+            "cwd": "${workspaceFolder}",
+            "executable": "./build/sample.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "runToEntryPoint": "main",
+            "armToolchainPath": "C:/arm-none-eabi/bin",
+            "servertype": "openocd",
+            "serverpath": "C:/OpenOCD-20231002-0.12.0/bin/openocd.exe",
+            "configFiles": [
+                "C:/OpenOCD-20231002-0.12.0/share/openocd/scripts/board/st_nucleo_f3.cfg"
+            ]
+        }
+    ]
+}
