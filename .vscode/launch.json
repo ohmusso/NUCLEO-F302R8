@@ -9,6 +9,7 @@
             // https://github.com/Marus/cortex-debug/blob/master/debug_attributes.md
             "name": "Cortex Debug",
             "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build",
             "executable": "./build/sample.elf",
             "request": "launch",
             "type": "cortex-debug",
