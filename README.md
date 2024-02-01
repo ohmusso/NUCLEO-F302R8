@@ -21,6 +21,20 @@ ex) elecom: U2C-MF10BK
 
 sub board to use wifi.
 
+#### Download AT Firmware
+
+#### Change Baudrate
+
+ESP32 WROOM dafult Baudrate is 115200.
+
+But my stm sw Baudrate is 9600.
+
+Set ESP32 WROOM Baudrate to 9600 by follow the command on serial port.
+
+``` serial port
+AT+UART_DEF=9600,8,1,0,0
+```
+
 ## FreeRTOS TCP
 
 <https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/releases/tag/V4.0.0>

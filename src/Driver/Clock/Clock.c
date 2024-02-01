@@ -42,8 +42,9 @@ typedef struct {
 #define RCC_APB1ENR_Enabled 0x01
 
 #define RCC_APB1ENR_TIM2 (RCC_APB1ENR_Enabled << 0)
-#define RCC_APB1ENR_USERT2 (RCC_APB1ENR_Enabled << 17)
-#define Init_RCC_APB1ENR (RCC_APB1ENR_USERT2 | RCC_APB1ENR_TIM2)
+#define RCC_APB1ENR_USART2 (RCC_APB1ENR_Enabled << 17)
+#define RCC_APB1ENR_USART3 (RCC_APB1ENR_Enabled << 18)
+#define Init_RCC_APB1ENR (RCC_APB1ENR_USART2 | RCC_APB1ENR_TIM2)
 
 /* APB2ENR */
 #define RCC_APB2ENR_Disabled 0x00
@@ -107,4 +108,11 @@ void Clock_Init() {
     /* stpSYST->CSR = Init_SYST_CSR; */
     /* stpSYST->RVR = Init_SYST_RVR; */
     /* stpSYST->CVR = Init_SYST_CVR; */
+}
+
+void Clock_ComEsp32Config(void) {
+    /* use usart3 */
+    stpRCC->APB1ENR |= RCC_APB1ENR_USART3;
+
+    /* Port clock is initialized by Clock_Init, so here is end */
 }

@@ -6,7 +6,7 @@ add_library(freertos_plus_tcpip_port STATIC
 )
 
 target_include_directories(freertos_plus_tcpip_port PUBLIC
-    ./Compiler/GCC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Compiler/GCC
 )
 
 target_link_libraries(freertos_plus_tcpip_port PRIVATE freertos_kernel freertos_plus_tcpip)

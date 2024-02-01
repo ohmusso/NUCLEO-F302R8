@@ -13,7 +13,10 @@
         "freertos_ip.h": "c",
         "iptracemacrodefaults.h": "c",
         "freertos_ip_utils.h": "c",
-        "freertosipconfig.h": "c"
+        "freertosipconfig.h": "c",
+        "clock.h": "c",
+        "stdio.h": "c",
+        "ctype.h": "c"
     },
     "editor.formatOnType": true,
     "editor.formatOnSave": true,

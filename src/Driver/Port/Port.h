@@ -20,4 +20,6 @@ extern void Port_SetMotorDriverEnUV(void);
 extern void Port_SetMotorDriverEnVW(void);
 extern void Port_SetMotorDriverEnWU(void);
 
+extern void Port_ComEsp32Config(void);
+
 #endif /* DRIVER_PORT_H*/

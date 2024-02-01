@@ -245,31 +245,8 @@ void taskAppIsrHandlerAdc(void) {
 
 void taskAppUart(void* pvParameters) {
     const TickType_t durationTx = 100;
-    RxDataType rxData = '\0';
 
     for (;;) {
-        if (Uart2_ReadData(&rxData) == UartRetFetchData) {
-            uint8_t ref = motorSpdLvlRef;
-
-            /* update motor speed reference */
-            if (rxData == '+') {
-                ref++;
-                if (ref >= mAppMotorSpeedMax) {
-                    ref--;
-                }
-            } else if (rxData == '-') {
-                if (ref > 0) {
-                    ref--;
-                }
-            } else {
-                /* nop */
-            }
-
-            motorSpdLvlRef = ref;
-
-            /* echo back */
-            // Usart2_Transmit(rxData);
-        }
         vTaskDelay(durationTx);
     }
 }
@@ -301,3 +278,7 @@ void taskAppAdcBemf(void* pvParameters) {
 /* FreeRTOS API */
 /* interupt cycle: 1ms */
 void vApplicationTickHook(void) { systickCount++; }
+BaseType_t xApplicationGetRandomNumber(uint32_t* pulNumber) {
+    *pulNumber = 0xFFFFFFFF;
+    return pdTRUE;
+}

@@ -3,6 +3,8 @@
 
 #include "Platform_Types.h"
 
-extern void Clock_Init();
+extern void Clock_Init(void);
+
+extern void Clock_ComEsp32Config(void);
 
 #endif /* DRIVER_CLOCK_H */

@@ -52,4 +52,9 @@ target_include_directories(freertos_plus_tcpip
         include
 )
 
-target_link_libraries(freertos_plus_tcpip PRIVATE freertos_plus_tcpip_port freertos_kernel)
+target_link_libraries(freertos_plus_tcpip 
+  PUBLIC
+    freertos_plus_tcpip_port
+  PRIVATE 
+    freertos_kernel
+)

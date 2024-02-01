@@ -42,10 +42,12 @@ typedef struct {
      Init_GPIOA_MODER_07 | Init_GPIOA_MODER_03 | Init_GPIOA_MODER_02)
 
 /* GPIOB */
-#define Init_GPIOB_MODER_00 (GPIOX_MODER_Type_Analog << 0)     /* BEMF2 */
-#define Init_GPIOB_MODER_03 (GPIOX_MODER_Type_Input << 6)      /* H2 */
-#define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26) /* LED */
-#define Init_GPIOB_MODER_10 (GPIOX_MODER_Type_Input << 20)     /* H3 */
+#define Init_GPIOB_MODER_00 (GPIOX_MODER_Type_Analog << 0)      /* BEMF2 */
+#define Init_GPIOB_MODER_03 (GPIOX_MODER_Type_Input << 6)       /* H2 */
+#define Init_GPIOB_MODER_13 (GPIOX_MODER_Type_GenOutput << 26)  /* LED */
+#define Init_GPIOB_MODER_10_H3 (GPIOX_MODER_Type_Input << 20)   /* H3 */
+#define GPIOB_MODER_10_Uart3Tx (GPIOX_MODER_Type_AltFunc << 20) /* UART3 Tx */
+#define GPIOB_MODER_11_Uart3Rx (GPIOX_MODER_Type_AltFunc << 22) /* UART3 Rx */
 #define Init_GPIOB_MODER (Init_GPIOB_MODER_13 | Init_GPIOB_MODER_00)
 
 /* GPIOC */
@@ -98,6 +100,9 @@ typedef struct {
     (GPIOA_AFRH_SWCLK | GPIOA_AFRH_SWDIO | GPIOA_AFRH_TIM1_CH3 | \
      GPIOA_AFRH_TIM1_CH2 | GPIOA_AFRH_TIM1_CH1)
 
+#define GPIOB_AFRH_USERT3_TX (0x07 << 8)
+#define GPIOB_AFRH_USERT3_RX (0x07 << 12)
+
 /* pointer to GPIOX register */
 #define stpGPIOA ((StGPIOX *)(GPIOA_BASE_ADDRESS))
 #define stpGPIOB ((StGPIOX *)(GPIOB_BASE_ADDRESS))
@@ -120,6 +125,11 @@ void Port_Init() {
 
     /* GPIOC */
     stpGPIOC->MODER = Init_GPIOC_MODER;
+}
+
+void Port_ComEsp32Config(void) {
+    stpGPIOB->MODER |= (GPIOB_MODER_11_Uart3Rx | GPIOB_MODER_10_Uart3Tx);
+    stpGPIOB->AFRH |= (GPIOB_AFRH_USERT3_RX | GPIOB_AFRH_USERT3_TX);
 }
 
 PortOnOff Port_ReadH1() {

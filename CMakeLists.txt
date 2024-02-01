@@ -2,7 +2,14 @@ cmake_minimum_required(VERSION 3.14)
 
 project(sample C ASM)
 
-# FreeRTOS
+# Common includes
+include_directories(./src)
+include_directories(./src/include)
+
+# Driver
+add_subdirectory(src/driver)
+
+# FreeRTOS Kernel
 set(FREERTOS_CONFIG_FILE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACHE STRING "Absolute path to the directory with FreeRTOSConfig.h")
 set(FREERTOS_PORT "GCC_ARM_CM4F" CACHE STRING "FreeRTOS port name")
 set(FREERTOS_HEAP "1" CACHE STRING "FreeRTOS heap model number. 1 .. 5. Or absolute path to custom heap source file")
@@ -14,19 +21,10 @@ set(FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACH
 include_directories("${FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY}")
 add_subdirectory(lib/FreeRTOS-Plus-TCP)
 
-# user code
-
-## common user includes
-include_directories(./src)
-include_directories(./src/include)
-
-## driver
-add_subdirectory(src/driver)
-
-## application
+# Application
 add_subdirectory(src/app)
 
-# bios and exe file
+# Exe file
 add_executable(sample ./src/startup.s ./src/main.c)
 target_link_libraries(sample freertos_kernel freertos_plus_tcpip driver app)
 

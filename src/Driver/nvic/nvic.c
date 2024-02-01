@@ -33,6 +33,7 @@ typedef struct {
 // NVIC_ISER0_EXTI03_Enabled)
 
 #define NVIC_ISER1_USART2_Enabled (NVIC_ISER_Enabled << 6)
+#define NVIC_ISER1_USART3_Enabled (NVIC_ISER_Enabled << 7)
 #define NVIC_ISER1_EXTI10_15_Enabled (NVIC_ISER_Enabled << 8)
 #define Init_NVIC_ISER1 \
     (NVIC_ISER1_EXTI10_15_Enabled | NVIC_ISER1_USART2_Enabled)
@@ -67,7 +68,7 @@ typedef struct {
 #define stpIP ((uint8*)NVIC_IPRx_BASE_ADDRESS)
 #define pAIRCR ((uint32*)AIRCR_BASE_ADDRESS)
 
-void Nvic_Init() {
+void Nvic_Init(void) {
     /* enable interrupt */
     stpISER->ISER0 = Init_NVIC_ISER0;
     stpISER->ISER1 = Init_NVIC_ISER1;
@@ -83,4 +84,9 @@ void Nvic_InitInterruptPrioriy(const uint8 priority) {
     for (i = 0; i < NVIC_IP_Num; i++) {
         stpIP[i] = _priority;
     }
+}
+
+void Nvic_ComEsp32Config(void) {
+    /* enable USART3 interrupt */
+    stpISER->ISER1 |= NVIC_ISER1_USART3_Enabled;
 }

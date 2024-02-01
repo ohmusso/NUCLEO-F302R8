@@ -113,7 +113,7 @@ g_pfnVectors:
 	.word	0				/* 00D0:  */
 	.word	0				/* 00D4:  */
 	.word	IRQ_UART2_Handler /* 00D8: UART2 interrupt */
-	.word	0				/* 00DC:  */
+	.word	IRQ_UART3_Handler				/* 00DC: UART3 interrupt */
 	.word	IRQ_EXTI15_10_Handler /* 00E0: EXTI Line[15:10] interrupts */
 	.word	0				/* 00E4:  */
 	.word	0				/* 00E8:  */

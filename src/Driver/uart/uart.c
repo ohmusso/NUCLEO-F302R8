@@ -1,6 +1,8 @@
 #include "uart.h"
 
+#define USART1_BASE_ADDRESS 0x40013800 /* USART1 */
 #define USART2_BASE_ADDRESS 0x40004400 /* USART2 */
+#define USART3_BASE_ADDRESS 0x40004800 /* USART3 */
 
 typedef struct {
     uint32 CR1;
@@ -56,17 +58,20 @@ typedef struct {
 #define USART_CR2_STOP_dot5bit 0x01
 #define USART_CR2_STOP_2bit 0x02
 #define USART_CR2_STOP_1dot5bit 0x03
-#define USART_CR1_STOP (USART_CR2_STOP_1bit << 12)
+#define USART_CR2_STOP (USART_CR2_STOP_1bit << 12)
 
-#define Init_USART2_CR2 (USART_CR1_STOP)
+#define Init_USART2_CR2 (USART_CR2_STOP)
 
-/* BRR */
+/* BRR fck = 8MHz */
 #define USART_BRR_9600 (0x0341)
+#define USART_BRR_115200 (0x0045)
 
 #define Init_USART2_BRR (USART_BRR_9600)
 
-/* pointer to GPIOX register */
-#define stpUSART2 ((StUSART*)(USART2_BASE_ADDRESS))
+/* pointer to UART register */
+#define stpUSART1 ((volatile StUSART*)(USART1_BASE_ADDRESS))
+#define stpUSART2 ((volatile StUSART*)(USART2_BASE_ADDRESS))
+#define stpUSART3 ((volatile StUSART*)(USART3_BASE_ADDRESS))
 
 static void enqueueUsart2RxQueue(uint8 data);
 static int dequeueUsart2RxQueue();
@@ -79,28 +84,28 @@ void Uart_Init() {
     stpUSART2->CR1 |= USART_CR1_UE;
 }
 
-#define Uart2_WaitUntilTxComp() \
-    do {                        \
-        ; /* busy wait */       \
-    } while (((stpUSART2->ISR >> 7) & 0x00000001) == 0)
+#define Uart_WaitUntilTxComp(stpReg) \
+    do {                             \
+        ; /* busy wait */            \
+    } while ((((stpReg)->ISR >> 7) & 0x00000001) == 0)
 
 void Usart2_Transmit(uint8 value) {
-    Uart2_WaitUntilTxComp();
+    Uart_WaitUntilTxComp(stpUSART2);
     stpUSART2->TDR = value;
 }
 
-void Usart2_TransmitBytes(const char_t* const str) {
+void Usart2_TransmitBytes(const uint8* const str) {
     int i = 0;
 
     while (str[i] != '\0') {
-        Uart2_WaitUntilTxComp();
+        Uart_WaitUntilTxComp(stpUSART2);
         stpUSART2->TDR = str[i];
         i++;
     }
 
-    Uart2_WaitUntilTxComp();
+    Uart_WaitUntilTxComp(stpUSART2);
     stpUSART2->TDR = '\r';
-    Uart2_WaitUntilTxComp();
+    Uart_WaitUntilTxComp(stpUSART2);
     stpUSART2->TDR = '\n';
 }
 
@@ -109,7 +114,7 @@ void Usart2_TransmitHexDatas(const char_t* const str, const char_t len) {
     char_t c = '0';
 
     while (i < len) {
-        Uart2_WaitUntilTxComp();
+        Uart_WaitUntilTxComp(stpUSART2);
         if ((str[i] >= 0) && (str[i] <= 9)) {
             c = str[i] + '0';
         } else if ((str[i] >= 10) && (str[i] <= 15)) {
@@ -122,9 +127,9 @@ void Usart2_TransmitHexDatas(const char_t* const str, const char_t len) {
         i++;
     }
 
-    Uart2_WaitUntilTxComp();
+    Uart_WaitUntilTxComp(stpUSART2);
     stpUSART2->TDR = '\r';
-    Uart2_WaitUntilTxComp();
+    Uart_WaitUntilTxComp(stpUSART2);
     stpUSART2->TDR = '\n';
 }
 
@@ -165,6 +170,31 @@ static int dequeueUsart2RxQueue() {
     usart2RxQueueFront = (usart2RxQueueFront + 1) % UART2_RX_QUEUE_SIZE;
     return data;
 }
+
+void Usart3_ComEsp32Config(void) {
+    stpUSART3->CR1 = (USART_CR1_M1 | USART_CR1_OVER8_16samples | USART_CR1_M0 |
+                      USART_CR1_RXNEIE_Enable | USART_CR1_TE | USART_CR1_RE);
+    stpUSART3->CR2 = USART_CR2_STOP;
+    stpUSART3->BRR = USART_BRR_9600;
+    stpUSART3->CR1 |= USART_CR1_UE;
+}
+
+void Usart3_ComEsp32TransmitBytes(const uint8* const str) {
+    int i = 0;
+
+    while (str[i] != '\0') {
+        Uart_WaitUntilTxComp(stpUSART3);
+        stpUSART3->TDR = str[i];
+        i++;
+    }
+
+    Uart_WaitUntilTxComp(stpUSART3);
+    stpUSART3->TDR = '\r';
+    Uart_WaitUntilTxComp(stpUSART3);
+    stpUSART3->TDR = '\n';
+}
+
+uint8 Usart3_ComEsp32Read(void) { return stpUSART3->RDR; }
 
 /* use in interrupt context */
 void Usart2_RxIndication() { enqueueUsart2RxQueue(stpUSART2->RDR); }
