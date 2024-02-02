@@ -35,7 +35,11 @@ Set ESP32 WROOM Baudrate to 9600 by follow the command on serial port.
 AT+UART_DEF=9600,8,1,0,0
 ```
 
-## FreeRTOS TCP
+## FreeRTOS
+
+<https://github.com/FreeRTOS/FreeRTOS/releases/download/202212.01/FreeRTOSv202212.01.zip>
+
+### FreeRTOS TCP
 
 <https://github.com/FreeRTOS/FreeRTOS-Plus-TCP/releases/tag/V4.0.0>
 
@@ -98,8 +102,6 @@ sample.bin will be created at build directory and reprogramming.
 LD2 will be blinking.
 
 ### copy binary to usb drive
-
-※ this step is included in build.ps1
 
 ``` powershell
 Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
