@@ -14,7 +14,7 @@ typedef struct {
     uint32 notUsedRTOR;
     uint32 notUsedRQR;
     uint32 ISR;
-    uint32 notUsedICR;
+    uint32 ICR;
     uint8 RDR;
     uint8 notUsedRDR[3];
     uint16 noUsedTDRH;
@@ -68,10 +68,19 @@ typedef struct {
 
 #define Init_USART2_BRR (USART_BRR_9600)
 
+/* ICR */
+#define USART_ICR_ORE (1 << 3)
+
+/* ISR */
+#define USART_ISR_ORE_MASK (1 << 3)
+
 /* pointer to UART register */
 #define stpUSART1 ((volatile StUSART*)(USART1_BASE_ADDRESS))
 #define stpUSART2 ((volatile StUSART*)(USART2_BASE_ADDRESS))
 #define stpUSART3 ((volatile StUSART*)(USART3_BASE_ADDRESS))
+
+#define isIsrOreNoDetect(isr) (((isr) & USART_ISR_ORE_MASK) == 0)
+#define setIcrOre(isr) ((isr) |= USART_ICR_ORE)
 
 static void enqueueUsart2RxQueue(uint8 data);
 static int dequeueUsart2RxQueue();
@@ -173,7 +182,7 @@ static int dequeueUsart2RxQueue() {
 
 void Usart3_ComEsp32Config(void) {
     stpUSART3->CR1 = (USART_CR1_M1 | USART_CR1_OVER8_16samples | USART_CR1_M0 |
-                      USART_CR1_RXNEIE_Enable | USART_CR1_TE | USART_CR1_RE);
+                      USART_CR1_TE);
     stpUSART3->CR2 = USART_CR2_STOP;
     stpUSART3->BRR = USART_BRR_9600;
     stpUSART3->CR1 |= USART_CR1_UE;
@@ -194,7 +203,22 @@ void Usart3_ComEsp32TransmitBytes(const uint8* const str) {
     stpUSART3->TDR = '\n';
 }
 
-uint8 Usart3_ComEsp32Read(void) { return stpUSART3->RDR; }
+uint8 Usart3_ComEsp32Read(uint8* data) {
+    uint8 ucOreDetect;
+
+    *data = stpUSART3->RDR;
+    if (isIsrOreNoDetect(stpUSART3->ISR)) {
+        ucOreDetect = 0;
+    } else {
+        setIcrOre(stpUSART3->ICR); /* clear Overrun flag */
+        ucOreDetect = 1;
+    }
+    return ucOreDetect;
+}
+
+void Usart3_ComEsp32EnableRx(void) {
+    stpUSART3->CR1 |= USART_CR1_RXNEIE_Enable | USART_CR1_RE;
+}
 
 /* use in interrupt context */
 void Usart2_RxIndication() { enqueueUsart2RxQueue(stpUSART2->RDR); }

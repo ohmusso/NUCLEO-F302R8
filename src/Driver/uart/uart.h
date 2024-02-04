@@ -12,7 +12,8 @@ extern UartRetType Uart2_ReadData(RxDataType* data);
 
 extern void Usart3_ComEsp32Config(void);
 extern void Usart3_ComEsp32TransmitBytes(const uint8* const str);
-extern uint8 Usart3_ComEsp32Read(void);
+extern void Usart3_ComEsp32EnableRx(void);
+extern uint8 Usart3_ComEsp32Read(uint8* data);
 /* use in interrupt context */
 extern void Usart2_RxIndication();
 

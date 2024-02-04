@@ -54,16 +54,22 @@
 
 /* UART Task Priority */
 #define UART_TASK_PRIORITY (tskIDLE_PRIORITY + 4)
-/* AT command new line. CR + LF */
-#define ucAtCmdNewLineCr ((uint8_t)0x0D)
-#define ucAtCmdNewLineLf ((uint8_t)0x0A)
+/* AT command Special Character */
+#define ucAtCmdCr ((uint8_t)0x0D)
+#define ucAtCmdLf ((uint8_t)0x0A)
+#define ucAtCmdO ((uint8_t)'O')
+#define ucAtCmdK ((uint8_t)'K')
 /* New Line Status */
-#define ucNewLineStatusNone ((uint8_t)0x00)
-#define ucNewLineStatusWaitLf ((uint8_t)0x01)
+#define ucUartRcvStatNone ((uint8_t)0x00)
+#define ucUartRcvStatWaitLfStart ((uint8_t)0x01)
+#define ucUartRcvStatWaitO ((uint8_t)0x02)
+#define ucUartRcvStatWaitK ((uint8_t)0x03)
+#define ucUartRcvStatWaitCrEnd ((uint8_t)0x04)
+#define ucUartRcvStatWaitLfEnd ((uint8_t)0x05)
 /* termination character of rxData  */
 #define ucTerminationChar ((uint8_t)'\0')
 /* uart rx ring buffer size */
-#define xRingBufSize ((size_t)64)
+#define xRingBufSize ((size_t)1024)
 #define xRxDataSize (xRingBufSize + 1U)
 #define lRingBufInvalidIndex (-1)
 
@@ -78,10 +84,33 @@ static int32_t lRxRingBufRear;
 static int32_t lRxRingBufRearTmp;
 static uint8_t ucRxRingBuf[xRingBufSize];
 uint8_t ucRxData[xRxDataSize];
-static uint8_t ucNewLineStatus;
+uint8_t ucTxReq;
+static uint8_t ucUartRcvStat;
+static uint8_t ucUartOvrCnt;
 
 /* uart tx massage */
-static const uint8_t ucTxMsgAt[] = "AT";
+/* - ESP32 AT Commands */
+/* - see <https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/index.html#> */
+static const uint8_t ucTxMsgAT[] = "AT";
+static const uint8_t ucTxMsgReset[] = "AT+RST";
+static const uint8_t ucTxMsgEchoOff[] = "ATE0";
+static const uint8_t ucTxMsgQueryWifiMode[] = "AT+CWMODE?";
+static const uint8_t ucTxMsgWifiModeStation[] = "AT+CWMODE=1";
+static const uint8_t ucTxMsgQueryWifiConnect[] = "AT+CWJAP?";
+static const uint8_t ucTxMsgWifiWEPConnect[] = "AT+CWJAP=\"test\",\"testtest\"";    /* set test access point */
+static const uint8_t ucTxMsgGetWifiIp[] = "AT+CIPSTA?";
+static const uint8_t ucTxMsgDisconnectWifi[] = "AT+CWQAP";
+
+static const uint8_t* ucTxMsgTable[] = {
+    ucTxMsgAT,
+    ucTxMsgAT,
+    ucTxMsgQueryWifiMode,
+    ucTxMsgWifiModeStation,
+    ucTxMsgQueryWifiConnect,
+    ucTxMsgWifiWEPConnect,
+    ucTxMsgGetWifiIp,
+    ucTxMsgDisconnectWifi
+};
 
 /* prototype declaration  */
 static BaseType_t xESP32_Wifi_Via_Uart_NetworkInterfaceInitialise( NetworkInterface_t * pxInterface );
@@ -104,24 +133,36 @@ static int32_t pushRingBuf(const uint8_t ucData, const int32_t lFront,
                            const int32_t lRear);
 static int32_t popRingBuf(uint8_t* pData, int32_t ulRingBufFront,
                           int32_t ulRingBufRear);
-static BaseType_t xReceiveUart(void);
+static BaseType_t xUartReceive(void);
 
 /* function */
 
 void taskAppWifiViaUart(void* pvParameters) {
-    const TickType_t xTaskDuration = 1000; /* 10ms */
+    const TickType_t xTaskDuration = 5000; /* 5000ms */
     lRxRingBufFront = 0;
     lRxRingBufRear = 0;
     lRxRingBufRearTmp = 0;
-    ucNewLineStatus = ucNewLineStatusNone;
+    ucUartRcvStat = ucUartRcvStatNone;
     memset(ucRxRingBuf, 0, xRingBufSize);
-    /* send initialize command */
-    // Usart3_ComEsp32TransmitBytes(ucTxMsgAt);
-    // (void)xReceiveUart();
-    // Usart2_TransmitBytes(ucRxData);
+    ucTxReq = 0;
+
+    /* send setup command */
+    Usart3_ComEsp32TransmitBytes(ucTxMsgReset);
+    vTaskDelay(xTaskDuration);
+    Usart3_ComEsp32TransmitBytes(ucTxMsgEchoOff);
+    vTaskDelay(xTaskDuration);
+
+    Usart3_ComEsp32EnableRx();
 
     for (;;) {
-        Usart3_ComEsp32TransmitBytes(ucTxMsgAt);
+        if( ucTxReq != 0 ){ /* set by debugger */
+            ucUartRcvStat = ucUartRcvStatNone;
+            lRxRingBufRearTmp = lRxRingBufRear;
+            Usart3_ComEsp32TransmitBytes(ucTxMsgTable[ucTxReq]);
+            ucTxReq = 0;
+            (void)xUartReceive();
+            continue;
+        }
         vTaskDelay(xTaskDuration);
     }
 }
@@ -179,10 +220,11 @@ BaseType_t xESP32_Wifi_Via_Uart_GetPhyLinkStatus( NetworkInterface_t * pxInterfa
     return pdFALSE;
 }
 
-static BaseType_t xReceiveUart(void) {
+static BaseType_t xUartReceive(void) {
+    const TickType_t xTaskDuration = 10000; /* 10000ms */
     int32_t lNotifyRxRingBufRear = lRingBufInvalidIndex;
 
-    xTaskNotifyWait(0U, 0U, (uint32_t*)&lNotifyRxRingBufRear, portMAX_DELAY);
+    xTaskNotifyWait(0U, 0U, (uint32_t*)&lNotifyRxRingBufRear, xTaskDuration);
 
     if (lNotifyRxRingBufRear == lRingBufInvalidIndex) {
         /* no event */
@@ -235,10 +277,12 @@ void taskAppWifiViaUartIsrHandlerUart3Rx(void) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     int32_t lRetPushRingBuf;
     uint8_t ucRecvData;
+    uint8_t ucOreDetect;
 
-    ucRecvData = Usart3_ComEsp32Read(); /* read data and clear interrupt flag */
+    ucOreDetect = Usart3_ComEsp32Read(&ucRecvData); /* read data and clear interrupt flag */
 
-    if (xTaskStart == pdFAIL){
+    if ( ucOreDetect != 0 ){
+        ucUartOvrCnt++;
         return;
     }
 
@@ -248,27 +292,73 @@ void taskAppWifiViaUartIsrHandlerUart3Rx(void) {
 
     if (lRetPushRingBuf == lRingBufInvalidIndex) {
         /* drop data */
-        ucNewLineStatus = ucNewLineStatusNone;
-        lRxRingBufRearTmp = lRxRingBufRear;
+        ucUartRcvStat = ucUartRcvStatNone;
         return;
     }
 
     lRxRingBufRearTmp = lRetPushRingBuf;
 
-    /* update status */
-    if (ucRecvData == ucAtCmdNewLineCr) {
-        /* receive CR */
-        ucNewLineStatus = ucNewLineStatusWaitLf;
-    } else if (ucNewLineStatus == ucNewLineStatusWaitLf) {
-        /* receive CR + LF  */
-        ucNewLineStatus = ucNewLineStatusNone;
-        /* notify uart task */
-        lRxRingBufRear = lRxRingBufRearTmp;
-        xTaskNotifyFromISR(xTaskAppWifiViaUart, lRxRingBufRear,
-                           eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    } else {
-        /* receive LF without CR */
-        ucNewLineStatus = ucNewLineStatusNone;
+    /* detect OK */
+    switch (ucUartRcvStat) {
+        case ucUartRcvStatNone:
+            if (ucRecvData == ucAtCmdCr) {
+                ucUartRcvStat = ucUartRcvStatWaitLfStart;
+            }
+            break;
+        case ucUartRcvStatWaitLfStart:
+            if (ucRecvData == ucAtCmdLf) {
+                ucUartRcvStat = ucUartRcvStatWaitO;
+            }
+            else{
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            break;
+        case ucUartRcvStatWaitO:
+            if (ucRecvData == ucAtCmdO) {
+                ucUartRcvStat = ucUartRcvStatWaitK;
+            }
+            else if (ucRecvData == ucAtCmdCr) {
+                /* LF ⇒ CR */
+                ucUartRcvStat = ucUartRcvStatWaitLfStart;
+            }
+            else{
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            break;
+        case ucUartRcvStatWaitK:
+            if (ucRecvData == ucAtCmdK) {
+                ucUartRcvStat = ucUartRcvStatWaitCrEnd;
+            }
+            else{
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            break;
+        case ucUartRcvStatWaitCrEnd:
+            if (ucRecvData == ucAtCmdCr) {
+                ucUartRcvStat = ucUartRcvStatWaitLfEnd;
+            }
+            else{
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            break;
+        case ucUartRcvStatWaitLfEnd:
+            if (ucRecvData == ucAtCmdLf) {
+                /* complete receiving data */
+                lRxRingBufRear = lRxRingBufRearTmp;
+
+                /* notify uart task */
+                xTaskNotifyFromISR(xTaskAppWifiViaUart, lRxRingBufRear,
+                                eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+                portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            else{
+                ucUartRcvStat = ucUartRcvStatNone;
+            }
+            break;
+        default:
+            ucUartRcvStat = ucUartRcvStatNone;            
+            break;
     }
 }
