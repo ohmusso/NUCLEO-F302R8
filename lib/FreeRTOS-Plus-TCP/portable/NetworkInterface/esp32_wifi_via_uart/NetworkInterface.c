@@ -45,6 +45,7 @@
 
 /* FreeRTOS+TCP includes. */
 #include "FreeRTOS_IP.h"
+#include "FreeRTOS_IPv6_Sockets.h"
 
 /* Driver of STM32F302R8 includes. */
 #include "src/driver/clock/Clock.h"
@@ -67,7 +68,7 @@
 #define ucUartRcvStatWaitCrEnd ((uint8_t)0x04)
 #define ucUartRcvStatWaitLfEnd ((uint8_t)0x05)
 /* termination character of rxData  */
-#define ucTerminationChar ((uint8_t)'\0')
+#define cTerminationChar ((char)'\0')
 /* uart rx ring buffer size */
 #define xRingBufSize ((size_t)1024)
 #define xRxDataSize (xRingBufSize + 1U)
@@ -84,33 +85,35 @@ static int32_t lRxRingBufRear;
 static int32_t lRxRingBufRearTmp;
 static uint8_t ucRxRingBuf[xRingBufSize];
 uint8_t ucRxData[xRxDataSize];
-uint8_t ucTxReq;
+
+static NetworkInterface_t* pxNetInterface;
+static NetworkEndPoint_t xNetEndPoint;
+static uint8_t ucMACAddress[ipMAC_ADDRESS_LENGTH_BYTES];
+static IPv6_Address_t xPrefix;
+static IPv6_Address_t xIPAddressLocal;
+static IPv6_Address_t xIPAddressGlobal;
+
 static uint8_t ucUartRcvStat;
 static uint8_t ucUartOvrCnt;
+
+/* To use AT command paser */
+#define xParseWorkBufLen ((size_t)128)
+static char cParseWorkBuf[xParseWorkBufLen];
 
 /* uart tx massage */
 /* - ESP32 AT Commands */
 /* - see <https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/index.html#> */
-static const uint8_t ucTxMsgAT[] = "AT";
+// static const char ucTxMsgAT[] = "AT";
 static const uint8_t ucTxMsgReset[] = "AT+RST";
 static const uint8_t ucTxMsgEchoOff[] = "ATE0";
-static const uint8_t ucTxMsgQueryWifiMode[] = "AT+CWMODE?";
+static const uint8_t ucTxMsgEnableIpv6[] = "AT+CIPV6=1";
+// static const uint8_t ucTxMsgQueryWifiMode[] = "AT+CWMODE?";
 static const uint8_t ucTxMsgWifiModeStation[] = "AT+CWMODE=1";
-static const uint8_t ucTxMsgQueryWifiConnect[] = "AT+CWJAP?";
+// static const uint8_t ucTxMsgQueryWifiConnect[] = "AT+CWJAP?";
 static const uint8_t ucTxMsgWifiWEPConnect[] = "AT+CWJAP=\"test\",\"testtest\"";    /* set test access point */
 static const uint8_t ucTxMsgGetWifiIp[] = "AT+CIPSTA?";
-static const uint8_t ucTxMsgDisconnectWifi[] = "AT+CWQAP";
-
-static const uint8_t* ucTxMsgTable[] = {
-    ucTxMsgAT,
-    ucTxMsgAT,
-    ucTxMsgQueryWifiMode,
-    ucTxMsgWifiModeStation,
-    ucTxMsgQueryWifiConnect,
-    ucTxMsgWifiWEPConnect,
-    ucTxMsgGetWifiIp,
-    ucTxMsgDisconnectWifi
-};
+static const uint8_t ucTxMsgGetWifiMac[] = "AT+CIPSTAMAC?";
+// static const uint8_t uucTxMsgDisconnectWifi[] = "AT+CWQAP";
 
 /* prototype declaration  */
 static BaseType_t xESP32_Wifi_Via_Uart_NetworkInterfaceInitialise( NetworkInterface_t * pxInterface );
@@ -134,6 +137,13 @@ static int32_t pushRingBuf(const uint8_t ucData, const int32_t lFront,
 static int32_t popRingBuf(uint8_t* pData, int32_t ulRingBufFront,
                           int32_t ulRingBufRear);
 static BaseType_t xUartReceive(void);
+static void xUartSend(const uint8_t* ucTxData);
+static BaseType_t xInitializeWifiViaUart(void);
+static BaseType_t xUpdateWifiMac(void);
+static BaseType_t xUpdateWifiIp(void);
+static void vfillHexMACAddress(uint8_t* const pucMACAddress, const char* const pcAsciiMACAddress);
+static const char* pcSkipUntilNextStr(const char* pcIterator, const char* pcStr);
+static void vCopyDoubleQuoteStr(char* pcStrTo, const char* pcStrFrom);
 
 /* function */
 
@@ -143,26 +153,12 @@ void taskAppWifiViaUart(void* pvParameters) {
     lRxRingBufRear = 0;
     lRxRingBufRearTmp = 0;
     ucUartRcvStat = ucUartRcvStatNone;
+    ucUartRcvStat = ucUartRcvStatNone;
     memset(ucRxRingBuf, 0, xRingBufSize);
-    ucTxReq = 0;
 
-    /* send setup command */
-    Usart3_ComEsp32TransmitBytes(ucTxMsgReset);
-    vTaskDelay(xTaskDuration);
-    Usart3_ComEsp32TransmitBytes(ucTxMsgEchoOff);
-    vTaskDelay(xTaskDuration);
-
-    Usart3_ComEsp32EnableRx();
+    (void)xInitializeWifiViaUart();
 
     for (;;) {
-        if( ucTxReq != 0 ){ /* set by debugger */
-            ucUartRcvStat = ucUartRcvStatNone;
-            lRxRingBufRearTmp = lRxRingBufRear;
-            Usart3_ComEsp32TransmitBytes(ucTxMsgTable[ucTxReq]);
-            ucTxReq = 0;
-            (void)xUartReceive();
-            continue;
-        }
         vTaskDelay(xTaskDuration);
     }
 }
@@ -181,6 +177,9 @@ NetworkInterface_t * pxESP32_Wifi_Via_Uart_FillInterfaceDescriptor(
     pxInterface->pfOutput = xESP32_Wifi_Via_Uart_NetworkInterfaceOutput;
     pxInterface->pfGetPhyLinkStatus = xESP32_Wifi_Via_Uart_GetPhyLinkStatus;
     FreeRTOS_AddNetworkInterface(pxInterface);
+
+    /* copy pointer to this object */
+    pxNetInterface = pxInterface;
 
     return pxInterface;
 }
@@ -228,7 +227,7 @@ static BaseType_t xUartReceive(void) {
 
     if (lNotifyRxRingBufRear == lRingBufInvalidIndex) {
         /* no event */
-        ucRxData[0] = ucTerminationChar;
+        ucRxData[0] = (uint8_t)cTerminationChar;
         return pdFAIL;
     }
 
@@ -238,12 +237,226 @@ static BaseType_t xUartReceive(void) {
 
     if (lPopRingBuf == lRingBufInvalidIndex) {
         /* error popRingBuf */
-        ucRxData[0] = ucTerminationChar;
+        ucRxData[0] = (uint8_t)cTerminationChar;
         return pdFAIL;
     }
 
     lRxRingBufFront = lPopRingBuf;
     return pdPASS;
+}
+
+static void xUartSend(const uint8_t* ucTxData){
+    ucUartRcvStat = ucUartRcvStatNone;
+    lRxRingBufRearTmp = lRxRingBufRear;
+    Usart3_ComEsp32TransmitBytes(ucTxData);
+}
+
+static BaseType_t xInitializeWifiViaUart(void){
+    const TickType_t xTaskDuration = 1000; /* 1000ms */
+
+    /* send setup command */
+    /* reset esp32 */
+    Usart3_ComEsp32TransmitBytes(ucTxMsgReset);
+    vTaskDelay(xTaskDuration);
+
+    /* echo off */
+    Usart3_ComEsp32TransmitBytes(ucTxMsgEchoOff);
+    vTaskDelay(xTaskDuration);
+    
+    /* enable ipv6 */
+    Usart3_ComEsp32TransmitBytes(ucTxMsgEnableIpv6);
+    vTaskDelay(xTaskDuration);
+
+    /* set wifi station mode */
+    Usart3_ComEsp32TransmitBytes(ucTxMsgWifiModeStation);
+    vTaskDelay(xTaskDuration);
+
+    /* connect AP using WEP  */
+    Usart3_ComEsp32TransmitBytes( ucTxMsgWifiWEPConnect);
+    vTaskDelay(xTaskDuration);
+
+    /* enable uart rx and uart rx interrupt */
+    Usart3_ComEsp32EnableRx();
+
+    /* get mac and ipv6 address */
+    xUpdateWifiMac();
+    xUpdateWifiIp();
+
+    /* End-point-1 : private */
+    /* Network: fe80::/10 (link-local) */
+    /* IPv6   : fe80::7009/128 */
+    /* Gateway: - */
+    FreeRTOS_inet_pton6("fe80::", xPrefix.ucBytes);
+    FreeRTOS_FillEndPoint_IPv6( pxNetInterface, &(xNetEndPoint),
+                                &(xIPAddressLocal),
+                                &(xPrefix), 10U,    /* Prefix length. */
+                                NULL,               /* No gateway */
+                                NULL,               /* pxDNSServerAddress: Not used yet. */
+                                ucMACAddress);
+
+    return pdTRUE;
+}
+
+/* AT command parser */
+/* https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/Wi-Fi_AT_Commands.html#at-cipstamac-query-set-the-mac-address-of-an-esp32-station */
+static BaseType_t xUpdateWifiMac(void){
+    const char cResMacPrefix[] = "+CIPSTAMAC:";
+    const char* pcAsciiIpIterator;
+
+    xUartSend(ucTxMsgGetWifiMac);
+    if( xUartReceive() == pdFAIL){
+        return pdFAIL;
+    }
+
+    /* parse */
+    pcAsciiIpIterator = (char*)ucRxData;
+
+    /* skip until MACAddress */
+    pcAsciiIpIterator = pcSkipUntilNextStr(pcAsciiIpIterator, cResMacPrefix);
+
+    if( *pcAsciiIpIterator == cTerminationChar ){
+        return pdFAIL;
+    }
+
+    vCopyDoubleQuoteStr(cParseWorkBuf, pcAsciiIpIterator);
+    vfillHexMACAddress(ucMACAddress, cParseWorkBuf);
+
+    return pdPASS;
+}
+
+/* https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/Wi-Fi_AT_Commands.html#at-cipsta-query-set-the-ip-address-of-an-esp32-station */
+static BaseType_t xUpdateWifiIp(void){
+    const char cResKeyIpv6LL[] = ":ip6ll:";
+    const char cResKeyIpv6GL[] = ":ip6gl:";
+    const char* pcAsciiIpIterator;
+
+    xUartSend(ucTxMsgGetWifiIp);
+    if( xUartReceive() == pdFAIL){
+        return pdFAIL;
+    }
+
+    /* parse */
+    pcAsciiIpIterator = (char*)ucRxData;
+
+    /* skip until ipv6 link local */
+    pcAsciiIpIterator = pcSkipUntilNextStr(pcAsciiIpIterator, cResKeyIpv6LL);
+
+    /* ipv6 link local */
+    vCopyDoubleQuoteStr(cParseWorkBuf, pcAsciiIpIterator);
+    if( FreeRTOS_inet_pton6(cParseWorkBuf, xIPAddressLocal.ucBytes) == pdFALSE){
+        return pdFALSE;
+    }
+
+    /* skip until ipv6 global link */
+    pcAsciiIpIterator = pcSkipUntilNextStr(pcAsciiIpIterator, cResKeyIpv6GL);
+
+    /* no ipv6 global link if AP does not support ipv6 */
+    if( *pcAsciiIpIterator != cTerminationChar ){
+        /* ipv6 global link */
+        vCopyDoubleQuoteStr(cParseWorkBuf, pcAsciiIpIterator);
+        if( FreeRTOS_inet_pton6(cParseWorkBuf, xIPAddressGlobal.ucBytes) == pdFALSE){
+            return pdFALSE;
+        }
+    }
+
+    return pdPASS;
+}
+
+/* Ascii MACAddress string = "xx:xx:xx:xx:xx:xx" */
+static void vfillHexMACAddress(uint8_t* const pucMACAddress, const char* const pcAsciiMACAddress){
+    uint8_t ucAsciiMACIterator = 0;
+
+    for( uint8_t ucMACIterator = 0; ucMACIterator < ipMAC_ADDRESS_LENGTH_BYTES; ucMACIterator++ ){
+        uint8_t ucHex;
+        
+        ucHex = ucASCIIToHex(pcAsciiMACAddress[ucAsciiMACIterator]);
+        ucHex = ucHex << 4;
+
+        ucAsciiMACIterator++;
+
+        ucHex |= ucASCIIToHex(pcAsciiMACAddress[ucAsciiMACIterator]);
+
+        pucMACAddress[ucMACIterator] = ucHex;
+        ucAsciiMACIterator++;
+
+        ucAsciiMACIterator++;    /* skip ':' */
+    }
+}
+
+static const char* pcSkipUntilNextStr(const char* pcIterator, const char* pcStr){
+    const char* pcRetIterator = pcIterator;
+
+    /* check empty string */
+    if( (*pcIterator == '\0') || (*pcStr == '\0')){
+        return pcIterator;
+    }
+
+    while(True){
+        const char* pcCurIterator = pcRetIterator;
+        const char* pcStrIterator = pcStr;
+        uint8_t ucStringMatch = 1; /* if string does not match, set by 0  */
+
+        /* compare string */
+        while(*pcStrIterator != cTerminationChar){
+            /* check string end */
+            if(*pcCurIterator == cTerminationChar){
+                /* string end */
+                return pcCurIterator;
+            }
+
+            /* compare character */
+            if( *pcCurIterator != *pcStrIterator ){
+                ucStringMatch = 0;
+                break;
+            }
+
+            /* next character */
+            pcCurIterator++;
+            pcStrIterator++;
+        }
+
+        if( ucStringMatch == 1 ){
+            /* string Match */
+            pcRetIterator += strlen(pcStr);
+            break;
+        }
+        pcRetIterator++;
+    }
+
+    /* string match  */
+    return pcRetIterator;
+}
+
+/* pcStrFrom is double quote string */
+static void vCopyDoubleQuoteStr(char* pcStrTo, const char* pcStrFrom){
+
+    /* is first character double quote */
+    if( *pcStrFrom != '"'){
+        return;
+    }
+
+    pcStrFrom++;
+
+    while(True){
+        if( *pcStrFrom == '"' ){
+            /* termination */
+            *pcStrTo = cTerminationChar;
+            break;
+        }
+
+        if( *pcStrFrom == cTerminationChar ){
+            /* invalid but termination */
+            *pcStrTo = cTerminationChar;
+            break;
+        }
+
+        *pcStrTo = *pcStrFrom;
+
+        pcStrTo++;
+        pcStrFrom++;
+    }
+
+    return;
 }
 
 static int32_t pushRingBuf(const uint8_t ucData, const int32_t lFront,
@@ -267,7 +480,7 @@ static int32_t popRingBuf(uint8_t* pData, int32_t lFront, int32_t lRear) {
         lFront = (lFront + 1) % xRingBufSize;
     }
 
-    *pData = ucTerminationChar;
+    *pData = (uint8_t)cTerminationChar;
 
     return lFront;
 }

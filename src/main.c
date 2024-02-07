@@ -24,8 +24,6 @@
 
 /* NetworkInterface */
 static NetworkInterface_t xNetInterface;
-static NetworkEndPoint_t xNetEndPoint;
-static uint8_t ucMACAddress[6] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 extern NetworkInterface_t *pxESP32_Wifi_Via_Uart_FillInterfaceDescriptor(
     BaseType_t xEMACIndex, NetworkInterface_t *pxInterface);
 static void vInitNetwork(void);
@@ -60,29 +58,7 @@ int main() {
 }
 
 static void vInitNetwork(void) {
-    IPv6_Address_t xIPAddress;
-    IPv6_Address_t xPrefix;
-    // IPv6_Address_t xGateWay;
-
     pxESP32_Wifi_Via_Uart_FillInterfaceDescriptor(0, &xNetInterface);
-
-    /* End-point-1 : private */
-    /* Network: fe80::/10 (link-local) */
-    /* IPv6   : fe80::7009/128 */
-    /* Gateway: - */
-    FreeRTOS_inet_pton6("fe80::", xPrefix.ucBytes);
-    FreeRTOS_inet_pton6("fe80::7009", xIPAddress.ucBytes);
-    FreeRTOS_FillEndPoint_IPv6(&(xNetInterface), &(xNetEndPoint), &(xIPAddress),
-                               &(xPrefix), 10U, /* Prefix length. */
-                               NULL,            /* No gateway */
-                               NULL, /* pxDNSServerAddress: Not used yet. */
-                               ucMACAddress);
-
-    /* End-point-2 : public */
-    /* Network: xxxx::/xx  */
-    /* IPv6   : xxxx:xxxx:xxxx:xxxx:xxxx/128 */
-    /* Gateway(obtained from Router Advertisement) */
-    /*   : xxxx:xxxx:xxxx:xxxx:xxxx  */
 
     /* Initialise the RTOS's TCP/IP stack.  The tasks that use the network */
     /* are created in the vApplicationIPNetworkEventHook() hook function */
