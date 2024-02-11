@@ -5,6 +5,7 @@
 #define ipconfigETHERNET_DRIVER_FILTERS_FRAME_TYPES 0
 #define ipconfigUSE_IPv4 0
 #define ipconfigUSE_IPv6 1
+#define ipconfigSUPPORT_OUTGOING_PINGS 1
 #define ipconfigUSE_TCP 0
 #define ipconfigUSE_TCP_WIN 0
 #define ipconfigUSE_DNS 0

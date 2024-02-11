@@ -7,4 +7,4 @@ set(
 
 add_library(app STATIC ${SRCS})
 
-target_link_libraries(app PRIVATE freertos_kernel)
+target_link_libraries(app PRIVATE freertos_kernel freertos_plus_tcpip)

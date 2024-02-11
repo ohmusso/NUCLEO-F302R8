@@ -188,7 +188,18 @@ void Usart3_ComEsp32Config(void) {
     stpUSART3->CR1 |= USART_CR1_UE;
 }
 
-void Usart3_ComEsp32TransmitBytes(const uint8* const str) {
+void Usart3_ComEsp32TransmitBytes(const uint8* const data) {
+    int i = 0;
+
+    while (data[i] != '\0') {
+        Uart_WaitUntilTxComp(stpUSART3);
+        stpUSART3->TDR = data[i];
+        i++;
+    }
+}
+
+/* termination \r\n */
+void Usart3_ComEsp32TransmitStr(const uint8* const str) {
     int i = 0;
 
     while (str[i] != '\0') {

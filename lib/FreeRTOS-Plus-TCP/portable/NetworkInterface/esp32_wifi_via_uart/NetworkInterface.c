@@ -60,13 +60,6 @@
 #define ucAtCmdLf ((uint8_t)0x0A)
 #define ucAtCmdO ((uint8_t)'O')
 #define ucAtCmdK ((uint8_t)'K')
-/* New Line Status */
-#define ucUartRcvStatNone ((uint8_t)0x00)
-#define ucUartRcvStatWaitLfStart ((uint8_t)0x01)
-#define ucUartRcvStatWaitO ((uint8_t)0x02)
-#define ucUartRcvStatWaitK ((uint8_t)0x03)
-#define ucUartRcvStatWaitCrEnd ((uint8_t)0x04)
-#define ucUartRcvStatWaitLfEnd ((uint8_t)0x05)
 /* termination character of rxData  */
 #define cTerminationChar ((char)'\0')
 /* uart rx ring buffer size */
@@ -84,7 +77,17 @@ static int32_t lRxRingBufFront;
 static int32_t lRxRingBufRear;
 static int32_t lRxRingBufRearTmp;
 static uint8_t ucRxRingBuf[xRingBufSize];
-uint8_t ucRxData[xRxDataSize];
+static uint8_t pucUartRxData[xRxDataSize];
+
+typedef struct {
+    uint8_t ucLen;
+    const uint8_t* pucWaitData;
+} UartWaitData_t;
+
+typedef struct {
+    uint8_t ucReq;
+    const UartWaitData_t * pxWaitData;
+} UartWaitDataUpdateReq_t;
 
 static NetworkInterface_t* pxNetInterface;
 static NetworkEndPoint_t xNetEndPoint;
@@ -93,8 +96,8 @@ static IPv6_Address_t xPrefix;
 static IPv6_Address_t xIPAddressLocal;
 static IPv6_Address_t xIPAddressGlobal;
 
-static uint8_t ucUartRcvStat;
 static uint8_t ucUartOvrCnt;
+static uint8_t ucTxReq;
 
 /* To use AT command paser */
 #define xParseWorkBufLen ((size_t)128)
@@ -103,7 +106,6 @@ static char cParseWorkBuf[xParseWorkBufLen];
 /* uart tx massage */
 /* - ESP32 AT Commands */
 /* - see <https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/index.html#> */
-// static const char ucTxMsgAT[] = "AT";
 static const uint8_t ucTxMsgReset[] = "AT+RST";
 static const uint8_t ucTxMsgEchoOff[] = "ATE0";
 static const uint8_t ucTxMsgEnableIpv6[] = "AT+CIPV6=1";
@@ -114,33 +116,52 @@ static const uint8_t ucTxMsgWifiWEPConnect[] = "AT+CWJAP=\"test\",\"testtest\"";
 static const uint8_t ucTxMsgGetWifiIp[] = "AT+CIPSTA?";
 static const uint8_t ucTxMsgGetWifiMac[] = "AT+CIPSTAMAC?";
 // static const uint8_t uucTxMsgDisconnectWifi[] = "AT+CWQAP";
+static const uint8_t ucTxMsgPassThroughRcvMode[] = "AT+CIPMODE=1";
+static const uint8_t ucTxMsgPassThroughSndMode[] = "AT+CIPSEND=4";
+static const uint8_t ucTxMsgTest[] = "ABC";
+
+static UartWaitDataUpdateReq_t xUartWaitDataUpdateReq;
+static const uint8_t ucResMsgOk[] = "\r\nOK\r\n";
+static const UartWaitData_t xUartResOk = {
+    sizeof(ucResMsgOk) - 1U,    /* decrement string termination '\0' */
+    ucResMsgOk
+};
+static const uint8_t ucResMsgBeginSend[] = "\r\n>";
+static const UartWaitData_t xUartResBeginSend = {
+    sizeof(ucResMsgBeginSend) - 1U, /* decrement string termination '\0' */
+    ucResMsgBeginSend
+};
+static const uint8_t ucResMsgSendOk[] = "SEND OK";
+static const UartWaitData_t xUartResSendOk = {
+    sizeof(ucResMsgSendOk) - 1U, /* decrement string termination '\0' */
+    ucResMsgSendOk
+};
 
 /* prototype declaration  */
 static BaseType_t xESP32_Wifi_Via_Uart_NetworkInterfaceInitialise( NetworkInterface_t * pxInterface );
-
 static BaseType_t xESP32_Wifi_Via_Uart_NetworkInterfaceOutput(
     NetworkInterface_t * pxInterface,
     NetworkBufferDescriptor_t * const pxNetworkBuffer,
     BaseType_t xReleaseAfterSend
 );
-
 static BaseType_t xESP32_Wifi_Via_Uart_GetPhyLinkStatus( NetworkInterface_t * pxInterface );
-
-
 NetworkInterface_t * pxESP32_Wifi_Via_Uart_FillInterfaceDescriptor(
     BaseType_t xEMACIndex,
     NetworkInterface_t * pxInterface
 );
-
+static BaseType_t xDetectUartRxWaitData(const uint8_t ucRxData);
 static int32_t pushRingBuf(const uint8_t ucData, const int32_t lFront,
                            const int32_t lRear);
 static int32_t popRingBuf(uint8_t* pData, int32_t ulRingBufFront,
                           int32_t ulRingBufRear);
 static BaseType_t xUartReceive(void);
-static void xUartSend(const uint8_t* ucTxData);
+static void xUartAtSend(const uint8_t* pucTxData, const UartWaitData_t* const pxWaitData);
+static void xUartDataSend(const uint8_t* pucTxData, const UartWaitData_t* const pxWaitData);
 static BaseType_t xInitializeWifiViaUart(void);
 static BaseType_t xUpdateWifiMac(void);
 static BaseType_t xUpdateWifiIp(void);
+static BaseType_t xSetWifieReciveMode(void);
+static BaseType_t xSendWifi(void);
 static void vfillHexMACAddress(uint8_t* const pucMACAddress, const char* const pcAsciiMACAddress);
 static const char* pcSkipUntilNextStr(const char* pcIterator, const char* pcStr);
 static void vCopyDoubleQuoteStr(char* pcStrTo, const char* pcStrFrom);
@@ -148,18 +169,18 @@ static void vCopyDoubleQuoteStr(char* pcStrTo, const char* pcStrFrom);
 /* function */
 
 void taskAppWifiViaUart(void* pvParameters) {
-    const TickType_t xTaskDuration = 5000; /* 5000ms */
     lRxRingBufFront = 0;
     lRxRingBufRear = 0;
     lRxRingBufRearTmp = 0;
-    ucUartRcvStat = ucUartRcvStatNone;
-    ucUartRcvStat = ucUartRcvStatNone;
     memset(ucRxRingBuf, 0, xRingBufSize);
 
     (void)xInitializeWifiViaUart();
 
     for (;;) {
-        vTaskDelay(xTaskDuration);
+        (void)xSendWifi();
+        vTaskDelay(3000);
+        // if( xUartReceive() == pdFAIL ){
+        // }
     }
 }
 
@@ -227,17 +248,17 @@ static BaseType_t xUartReceive(void) {
 
     if (lNotifyRxRingBufRear == lRingBufInvalidIndex) {
         /* no event */
-        ucRxData[0] = (uint8_t)cTerminationChar;
+        pucUartRxData[0] = (uint8_t)cTerminationChar;
         return pdFAIL;
     }
 
     /* read buffer */
     int32_t lPopRingBuf =
-        popRingBuf(ucRxData, lRxRingBufFront, lNotifyRxRingBufRear);
+        popRingBuf(pucUartRxData, lRxRingBufFront, lNotifyRxRingBufRear);
 
     if (lPopRingBuf == lRingBufInvalidIndex) {
         /* error popRingBuf */
-        ucRxData[0] = (uint8_t)cTerminationChar;
+        pucUartRxData[0] = (uint8_t)cTerminationChar;
         return pdFAIL;
     }
 
@@ -245,42 +266,51 @@ static BaseType_t xUartReceive(void) {
     return pdPASS;
 }
 
-static void xUartSend(const uint8_t* ucTxData){
-    ucUartRcvStat = ucUartRcvStatNone;
+static void xUartAtSend(const uint8_t* pucTxData, const UartWaitData_t* const pxWaitData){
     lRxRingBufRearTmp = lRxRingBufRear;
-    Usart3_ComEsp32TransmitBytes(ucTxData);
+    xUartWaitDataUpdateReq.pxWaitData = pxWaitData;
+    xUartWaitDataUpdateReq.ucReq++;
+    Usart3_ComEsp32TransmitStr(pucTxData);
+}
+
+static void xUartDataSend(const uint8_t* pucTxData, const UartWaitData_t* const pxWaitData){
+    lRxRingBufRearTmp = lRxRingBufRear;
+    xUartWaitDataUpdateReq.pxWaitData = pxWaitData;
+    xUartWaitDataUpdateReq.ucReq++;
+    Usart3_ComEsp32TransmitBytes(pucTxData);
 }
 
 static BaseType_t xInitializeWifiViaUart(void){
-    const TickType_t xTaskDuration = 1000; /* 1000ms */
+    const TickType_t xTaskDuration = 5000; /* 5000ms */
 
     /* send setup command */
     /* reset esp32 */
-    Usart3_ComEsp32TransmitBytes(ucTxMsgReset);
+    Usart3_ComEsp32TransmitStr(ucTxMsgReset);
     vTaskDelay(xTaskDuration);
 
     /* echo off */
-    Usart3_ComEsp32TransmitBytes(ucTxMsgEchoOff);
+    Usart3_ComEsp32TransmitStr(ucTxMsgEchoOff);
     vTaskDelay(xTaskDuration);
     
     /* enable ipv6 */
-    Usart3_ComEsp32TransmitBytes(ucTxMsgEnableIpv6);
+    Usart3_ComEsp32TransmitStr(ucTxMsgEnableIpv6);
     vTaskDelay(xTaskDuration);
 
     /* set wifi station mode */
-    Usart3_ComEsp32TransmitBytes(ucTxMsgWifiModeStation);
+    Usart3_ComEsp32TransmitStr(ucTxMsgWifiModeStation);
     vTaskDelay(xTaskDuration);
 
     /* connect AP using WEP  */
-    Usart3_ComEsp32TransmitBytes( ucTxMsgWifiWEPConnect);
+    Usart3_ComEsp32TransmitStr(ucTxMsgWifiWEPConnect);
     vTaskDelay(xTaskDuration);
 
     /* enable uart rx and uart rx interrupt */
     Usart3_ComEsp32EnableRx();
 
     /* get mac and ipv6 address */
-    xUpdateWifiMac();
-    xUpdateWifiIp();
+    (void)xUpdateWifiMac();
+    (void)xUpdateWifiIp();
+    (void)xSetWifieReciveMode();
 
     /* End-point-1 : private */
     /* Network: fe80::/10 (link-local) */
@@ -303,13 +333,13 @@ static BaseType_t xUpdateWifiMac(void){
     const char cResMacPrefix[] = "+CIPSTAMAC:";
     const char* pcAsciiIpIterator;
 
-    xUartSend(ucTxMsgGetWifiMac);
-    if( xUartReceive() == pdFAIL){
+    xUartAtSend(ucTxMsgGetWifiMac, &xUartResOk);
+    if( xUartReceive() == pdFAIL ){
         return pdFAIL;
     }
 
     /* parse */
-    pcAsciiIpIterator = (char*)ucRxData;
+    pcAsciiIpIterator = (char*)pucUartRxData;
 
     /* skip until MACAddress */
     pcAsciiIpIterator = pcSkipUntilNextStr(pcAsciiIpIterator, cResMacPrefix);
@@ -330,13 +360,13 @@ static BaseType_t xUpdateWifiIp(void){
     const char cResKeyIpv6GL[] = ":ip6gl:";
     const char* pcAsciiIpIterator;
 
-    xUartSend(ucTxMsgGetWifiIp);
-    if( xUartReceive() == pdFAIL){
+    xUartAtSend(ucTxMsgGetWifiIp, &xUartResOk);
+    if( xUartReceive() == pdFAIL ){
         return pdFAIL;
     }
 
     /* parse */
-    pcAsciiIpIterator = (char*)ucRxData;
+    pcAsciiIpIterator = (char*)pucUartRxData;
 
     /* skip until ipv6 link local */
     pcAsciiIpIterator = pcSkipUntilNextStr(pcAsciiIpIterator, cResKeyIpv6LL);
@@ -360,6 +390,30 @@ static BaseType_t xUpdateWifiIp(void){
     }
 
     return pdPASS;
+}
+
+static BaseType_t xSetWifieReciveMode(void){
+    /* set recive mode */
+    xUartAtSend(ucTxMsgPassThroughRcvMode, &xUartResOk);
+    if( xUartReceive() == pdFAIL ){
+        return pdFAIL;
+    }
+
+    return pdTRUE;
+}
+
+static BaseType_t xSendWifi(void){
+    xUartAtSend(ucTxMsgPassThroughSndMode, &xUartResBeginSend);
+    if( xUartReceive() == pdFAIL ){
+        return pdFAIL;
+    }
+
+    xUartDataSend(ucTxMsgTest, &xUartResSendOk);
+    if( xUartReceive() == pdFAIL ){
+        return pdFAIL;
+    }
+
+    return pdTRUE;
 }
 
 /* Ascii MACAddress string = "xx:xx:xx:xx:xx:xx" */
@@ -505,73 +559,72 @@ void taskAppWifiViaUartIsrHandlerUart3Rx(void) {
 
     if (lRetPushRingBuf == lRingBufInvalidIndex) {
         /* drop data */
-        ucUartRcvStat = ucUartRcvStatNone;
         return;
     }
 
     lRxRingBufRearTmp = lRetPushRingBuf;
 
     /* detect OK */
-    switch (ucUartRcvStat) {
-        case ucUartRcvStatNone:
-            if (ucRecvData == ucAtCmdCr) {
-                ucUartRcvStat = ucUartRcvStatWaitLfStart;
-            }
-            break;
-        case ucUartRcvStatWaitLfStart:
-            if (ucRecvData == ucAtCmdLf) {
-                ucUartRcvStat = ucUartRcvStatWaitO;
-            }
-            else{
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            break;
-        case ucUartRcvStatWaitO:
-            if (ucRecvData == ucAtCmdO) {
-                ucUartRcvStat = ucUartRcvStatWaitK;
-            }
-            else if (ucRecvData == ucAtCmdCr) {
-                /* LF ⇒ CR */
-                ucUartRcvStat = ucUartRcvStatWaitLfStart;
-            }
-            else{
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            break;
-        case ucUartRcvStatWaitK:
-            if (ucRecvData == ucAtCmdK) {
-                ucUartRcvStat = ucUartRcvStatWaitCrEnd;
-            }
-            else{
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            break;
-        case ucUartRcvStatWaitCrEnd:
-            if (ucRecvData == ucAtCmdCr) {
-                ucUartRcvStat = ucUartRcvStatWaitLfEnd;
-            }
-            else{
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            break;
-        case ucUartRcvStatWaitLfEnd:
-            if (ucRecvData == ucAtCmdLf) {
-                /* complete receiving data */
-                lRxRingBufRear = lRxRingBufRearTmp;
+    const BaseType_t xDetect = xDetectUartRxWaitData(ucRecvData);
+    if(xDetect != pdFALSE ){
+        /* complete receiving data */
+        lRxRingBufRear = lRxRingBufRearTmp;
 
-                /* notify uart task */
-                xTaskNotifyFromISR(xTaskAppWifiViaUart, lRxRingBufRear,
-                                eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
-                portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            else{
-                ucUartRcvStat = ucUartRcvStatNone;
-            }
-            break;
-        default:
-            ucUartRcvStat = ucUartRcvStatNone;            
-            break;
+        /* notify uart task */
+        xTaskNotifyFromISR(xTaskAppWifiViaUart, lRxRingBufRear,
+                        eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
+}
+
+static UartWaitData_t xUartWaitData;
+static size_t xUartWaitIterator;
+static BaseType_t xDetectUartRxWaitData(const uint8_t ucRxData){
+
+    if( xUartWaitDataUpdateReq.ucReq > 0 ){
+        (void)memcpy((void*)&xUartWaitData, (void*)xUartWaitDataUpdateReq.pxWaitData, sizeof(UartWaitData_t));
+        xUartWaitIterator = 0U;
+        xUartWaitDataUpdateReq.ucReq = 0U;
+    }
+
+    if( xUartWaitData.pucWaitData == (uint8_t*)0 ){
+        /* reset */
+        xUartWaitIterator = 0U;
+        return pdFAIL;
+    }
+
+    /* if character match */
+    if( ucRxData != xUartWaitData.pucWaitData[xUartWaitIterator] ){
+        /* character does not match */
+
+        /* reset */
+        xUartWaitIterator = 0U;
+
+        /* re-evaluate 1st character */
+        if( ucRxData != xUartWaitData.pucWaitData[xUartWaitIterator] ){
+            /* 1st character does not match */
+            /* nop */
+        }
+        else{
+            /* 1st character match */
+            xUartWaitIterator++;
+        }
+    }
+    else{
+        /* character match */
+        xUartWaitIterator++;
+    }
+
+    BaseType_t xRet;
+    if( xUartWaitIterator >= xUartWaitData.ucLen ){
+        /* detect */
+        xUartWaitIterator = 0U;
+        xRet = pdTRUE;
+    }
+    else{
+        /* detecting */
+        xRet = pdFALSE;
+    }
+
+    return xRet;
 }

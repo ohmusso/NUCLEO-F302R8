@@ -2,6 +2,7 @@
 
 /* FreeRTOS*/
 #include "FreeRTOS.h"
+#include "FreeRTOS_IP.h"
 #include "task.h"
 
 /* driver */
@@ -282,3 +283,6 @@ BaseType_t xApplicationGetRandomNumber(uint32_t* pulNumber) {
     *pulNumber = 0xFFFFFFFF;
     return pdTRUE;
 }
+
+void vApplicationPingReplyHook(ePingReplyStatus_t eStatus,
+                               uint16_t usIdentifier) {}
