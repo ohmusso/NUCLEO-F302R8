@@ -342,6 +342,8 @@ BaseType_t xESP32_Wifi_Via_Uart_NetworkInterfaceOutput(
     return xRet;
 }
 
+/* https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_TCP/Embedded_Ethernet_Buffer_Management.html */
+/* Scheme 1: Implemented by BufferAllocation_1.c */
 void vNetworkInterfaceAllocateRAMToBuffers( NetworkBufferDescriptor_t pxNetworkBuffers[ ipconfigNUM_NETWORK_BUFFER_DESCRIPTORS ] )
 {
     for( size_t i = 0; i < ipconfigNUM_NETWORK_BUFFER_DESCRIPTORS; i++){
