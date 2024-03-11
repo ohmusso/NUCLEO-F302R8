@@ -2,6 +2,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+# search gcc path
 set(TOOLCHAIN_PREFIX arm-none-eabi-)
 find_program(BINUTILS_PATH ${TOOLCHAIN_PREFIX}gcc NO_CACHE)
 
@@ -10,6 +11,9 @@ if (NOT BINUTILS_PATH)
 endif ()
 
 get_filename_component(ARM_TOOLCHAIN_DIR ${BINUTILS_PATH} DIRECTORY)
+
+# FreeRTOS PORT
+set(FREE_RTOS_PORT "GCC_ARM_CM4F")
 
 # target files
 file(GLOB_RECURSE SOURCES "*.c" "*.cpp" "*.s")

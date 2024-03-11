@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(sample C ASM)
+project(sample C CXX ASM)
+set(CMAKE_CXX_STANDARD 14)
 
 # Common includes
 include_directories(./src)
 include_directories(./src/include)
 
-# Driver
-add_subdirectory(src/driver)
-
 # FreeRTOS Kernel
 set(FREERTOS_CONFIG_FILE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACHE STRING "Absolute path to the directory with FreeRTOSConfig.h")
-set(FREERTOS_PORT "GCC_ARM_CM4F" CACHE STRING "FreeRTOS port name")
+set(FREERTOS_PORT ${FREE_RTOS_PORT} CACHE STRING "FreeRTOS port name")
 set(FREERTOS_HEAP "1" CACHE STRING "FreeRTOS heap model number. 1 .. 5. Or absolute path to custom heap source file")
 include_directories("${FREERTOS_CONFIG_FILE_DIRECTORY}")
 add_subdirectory(lib/freertos)
@@ -21,12 +19,16 @@ set(FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACH
 include_directories("${FREERTOS_PLUS_TCPIP_CONFIG_FILE_DIRECTORY}")
 add_subdirectory(lib/FreeRTOS-Plus-TCP)
 
-# Application
-add_subdirectory(src/app)
+# Driver
+add_subdirectory(src/driver)
 
-# Exe file
-add_executable(sample ./src/startup.s ./src/main.c)
-target_link_libraries(sample freertos_kernel freertos_plus_tcpip driver app)
+if ("${TARGET_MODULE}" STREQUAL "test")
+    enable_testing()
+    add_subdirectory(test)
+else()
+    # Application
+    add_subdirectory(src/app)
 
-# GoogleTest requires at least C++14
-#set(CMAKE_CXX_STANDARD 14)
+    add_executable(sample ./src/startup.s ./src/main.c)
+    target_link_libraries(sample freertos_kernel freertos_plus_tcpip driver app)
+endif()

@@ -106,3 +106,13 @@ LD2 will be blinking.
 ``` powershell
 Copy-Item  -Path "./build/sample.bin" -Destination "E:\"
 ```
+
+## test
+
+``` powershell
+ctest --test-dir test/build
+
+# or
+
+.\test\build\test\mytest.exe
+```
