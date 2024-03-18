@@ -2,7 +2,7 @@
 
 /* FreeRTOS*/
 #include "FreeRTOS.h"
-#include "FreeRTOS_IP.h"
+#include "FreeRTOS_ND.h"
 #include "task.h"
 
 /* driver */
@@ -20,12 +20,18 @@ int32_t systickCount = 0; /* unit: 1ms */
 TaskHandle_t xTaskHandleAppMotor = 0;
 
 /* app tasks */
+IPv6_Address_t xTartgetIp = {{0xFEU, 0x80U, 0x00U, 0x00U, 0x00U, 0x00U, 0x00U,
+                              0x00U, 0x7CU, 0xA8U, 0x43U, 0x97U, 0x36U, 0x7CU,
+                              0xB1U, 0x3FU}};
 void taskAppLedBlink(void* pvParameters) {
-    const int32_t durationBlink = 500;
+    const int32_t durationBlink = 1000;
 
     for (;;) {
         Port_Write(Port_Off);
         vTaskDelay(durationBlink);
+
+        FreeRTOS_SendPingRequestIPv6(&xTartgetIp, 8, 1000);
+
         Port_Write(Port_On);
         vTaskDelay(durationBlink);
     }

@@ -89,13 +89,12 @@ typedef struct {
 } UartWaitDataUpdateReq_t;
 
 static NetworkInterface_t* pxNetInterface;
-static NetworkEndPoint_t xNetEndPoint;
+static NetworkEndPoint_t xNetEndPointGlobal;
+static NetworkEndPoint_t xNetEndPointLocal;
 static uint8_t ucMACAddress[ipMAC_ADDRESS_LENGTH_BYTES] = {
     0x9CU, 0x9CU, 0x1FU,
     0xD0U, 0x03U, 0x84U
 };
-static IPv6_Address_t xPrefix;
-static IPv6_Address_t xIPAddressLocal;
 
 static uint8_t ucUartOvrCnt;
 
@@ -242,7 +241,7 @@ void taskAppWifiViaUart(void* pvParameters) {
         if( pxNetworkBuffer != (NetworkBufferDescriptor_t*)NULL){
             pxNetworkBuffer->xDataLength = (size_t)usLen;
             pxNetworkBuffer->pxInterface = pxNetInterface;
-            pxNetworkBuffer->pxEndPoint = &xNetEndPoint;
+            pxNetworkBuffer->pxEndPoint = &xNetEndPointGlobal;
 
             memcpy(pxNetworkBuffer->pucEthernetBuffer, pucNetworkBufRx, (size_t)usLen);
             IPStackEvent_t xRxEvent = {eNetworkRxEvent, (void *)pxNetworkBuffer};
@@ -358,16 +357,19 @@ BaseType_t xESP32_Wifi_Via_Uart_GetPhyLinkStatus( NetworkInterface_t * pxInterfa
 }
 
 static BaseType_t xInitializeAddress(void){
-    /* End-point-1 : private */
+    static IPv6_Address_t xPrefix;
+    static IPv6_Address_t xIPAddress;
+
+    /* End-point-1 : global(use DHCPv6 RA) */
     /* Network: fe80::/10 (link-local) */
     /* IPv6   : fe80::1234/128 */
     /* Gateway: - */
     FreeRTOS_inet_pton6("fe80::", xPrefix.ucBytes);
-    FreeRTOS_inet_pton6("fe80::1234", xIPAddressLocal.ucBytes);
+    FreeRTOS_inet_pton6("fe80::1234", xIPAddress.ucBytes);
     FreeRTOS_FillEndPoint_IPv6(
         pxNetInterface,
-        &(xNetEndPoint),
-        &(xIPAddressLocal),
+        &(xNetEndPointGlobal),
+        &(xIPAddress),
         &(xPrefix), 10U,    /* Prefix length. */
         NULL,               /* No gateway */
         NULL,               /* pxDNSServerAddress: Not used yet. */
@@ -376,8 +378,24 @@ static BaseType_t xInitializeAddress(void){
 
     /* set option after FreeRTOS_FillEndPoint_IPv6 is called. */
     /* FreeRTOS_FillEndPoint_IPv6 set default value. */
-    memcpy(xNetEndPoint.ipv6_settings.xIPAddress.ucBytes, xIPAddressLocal.ucBytes, ipSIZE_OF_IPv6_ADDRESS);
-    xNetEndPoint.bits.bWantRA = pdTRUE_UNSIGNED;
+    memcpy(xNetEndPointGlobal.ipv6_settings.xIPAddress.ucBytes, xIPAddress.ucBytes, ipSIZE_OF_IPv6_ADDRESS);
+    xNetEndPointGlobal.bits.bWantRA = pdTRUE_UNSIGNED;
+
+    /* End-point-2 : private */
+    /* Network: fe80::/10 (link-local) */
+    /* IPv6   : fe80::1234/128 */
+    /* Gateway: - */
+    FreeRTOS_inet_pton6("fe80::", xPrefix.ucBytes);
+    FreeRTOS_inet_pton6("fe80::1235", xIPAddress.ucBytes);
+    FreeRTOS_FillEndPoint_IPv6(
+        pxNetInterface,
+        &(xNetEndPointLocal),
+        &(xIPAddress),
+        &(xPrefix), 10U,    /* Prefix length. */
+        NULL,               /* No gateway */
+        NULL,               /* pxDNSServerAddress: Not used yet. */
+        ucMACAddress
+    );
 
     return pdTRUE;
 }
